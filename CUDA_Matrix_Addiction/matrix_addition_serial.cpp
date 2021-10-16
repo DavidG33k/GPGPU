@@ -1,7 +1,7 @@
 /**
 GPGPU assignment 1: Matrix Addition in CUDA
     @file matrix_addiction_serial.cpp
-    @author Canonaco Martina @author Gena Davide
+    @author Canonaco Martina @author Gena Davide @author Morello Michele
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,
