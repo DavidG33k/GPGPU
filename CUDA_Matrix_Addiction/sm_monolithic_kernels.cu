@@ -53,7 +53,7 @@ void printMatrix(double A[][N])
 int main()
 {
 // variables declaration
-    int size = M * N * sizeof(int); //expect a size in bytes
+    int size = M * N * sizeof(float); //expect a size in bytes
 
     dim3 dimBlock(32,32);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
