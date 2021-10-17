@@ -17,106 +17,88 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<iostream>
 #include<math.h>
 using namespace std;
+#define M 5
+#define N 9
 
-
-void matrixAlloc(double** A, int m, int n)
+void matrixInit(double A[][N], double value)
 {
-    for(int i=0; i<m; i++)
-        A[i]=new double[n];
-}
-
-void matrixInit(double A[][8], double value, int m, int n)
-{
-    for(int i=0; i<m; i++)
-        for(int j=0; j<n; j++)
+    for(int i=0; i<M; i++)
+        for(int j=0; j<N; j++)
             A[i][j] = value;
 }
 
 __global__
-void matrixAdd(double* A, double* B, double* C, int m, int n)
+void matrixAdd(double* A, double* B, double* C)
 {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int index = col + row * m;
+    int index = col + row * N;
 
-    if (col < n && row < m) {
+    if (col < N && row < M) {
         C[index] = A[index] + B[index];
     }
 }
 
-void printMatrix(double A[][8], int m, int n)
+void printMatrix(double A[][N])
 {
-    for(int i=0; i<m; i++)
+    for(int i=0; i<M; i++)
     {
-        for(int j=0; j<n; j++)
+        for(int j=0; j<N; j++)
             cout<<" "<<A[i][j]<<" ";
         cout<<endl;
     }
 }
 
-void deleteMatrix(double** A, int m, int n)
-{
-    for(int i=0; i<m; i++)
-        delete[] A[i];
-    delete[] A;
-}
-
 int main()
 {
-    #pragma region // variables declaration
-    int m = pow(2,2); //rows 12
-    int n = pow(2,3); //columns 16
-    int size = m * n * sizeof(int); // sizeof(int) convert numbers into bytes.
-    int blockSize = 8*8; //16*16 and 32*32
-    int numBlocks = (size + blockSize - 1) / blockSize;
-    #pragma endregion 
+// variables declaration
+    int size = M * N * sizeof(int); //expect a size in bytes
 
-    #pragma region //create and allocate matrix A, B and C
-    double A[4][8];
-    double B[4][8];
-    double C[4][8];
+    dim3 dimBlock(32,32);
+    dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
-    //matrixAlloc(A);
-    //matrixAlloc(B);
-    //matrixAlloc(C);
+ //create and allocate matrix A, B and C
+    double A[M][N];
+    double B[M][N];
+    double C[M][N];
 
     double *dev_A, *dev_B, *dev_C;
 
     cudaMalloc((void**)&dev_A, size);
     cudaMalloc((void**)&dev_B, size);
     cudaMalloc((void**)&dev_C, size);
-    #pragma endregion
 
-    #pragma region //init all the matrix with a passed value
-    matrixInit(A,1,m,n);
-    matrixInit(B,2,m,n);
-    matrixInit(C,0,m,n);
+//init all the matrix with a passed value
+    matrixInit(A,1);
+    matrixInit(B,2);
+    matrixInit(C,0);
+
+    cout<<endl<<"PRINT A"<<endl;
+    printMatrix(A);
+
+    cout<<endl<<"PRINT B"<<endl;
+    printMatrix(B);
+
+    cout<<endl<<"PRINT C"<<endl;
+    printMatrix(C);
 
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
-    #pragma endregion
-
-    #pragma region //addiction operation and print results
-    matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C, m, n);
+ 
+ //addiction operation and print results
+    matrixAdd<<<dimGrid, dimBlock>>>(dev_A, dev_B, dev_C);
     cudaDeviceSynchronize();
 
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
 
     //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(C,m,n);
-    #pragma endregion
-
-    #pragma region //delete matrix
-    //deleteMatrix(A);
-    //deleteMatrix(B);
-    //deleteMatrix(C);
+    printMatrix(C);
 
     cudaFree(dev_A); 
     cudaFree(dev_B); 
     cudaFree(dev_C);
-    #pragma endregion
     
     return 0;
 }
