@@ -18,7 +18,7 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<math.h>
 using namespace std;
 #define M 5
-#define N 9
+#define N 5
 
 void matrixInit(double A[][N], double value)
 {
@@ -53,11 +53,13 @@ void printMatrix(double A[][N])
 int main()
 {
 // variables declaration
-    int size = M * N * sizeof(float); //expect a size in bytes
+    int size = M * N * sizeof(double); //expect a size in bytes
 
-    dim3 dimBlock(32,32);
+    dim3 dimBlock(16,16);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
+    cout << ((N+dimBlock.x-1)/dimBlock.x) << " " <<((M+dimBlock.y-1)/dimBlock.y)<<endl;
+    cout << (int)ceil((double)N/dimBlock.x) << " " << (int)ceil((double)N/dimBlock.y);
  //create and allocate matrix A, B and C
     double A[M][N];
     double B[M][N];
@@ -70,9 +72,9 @@ int main()
     cudaMalloc((void**)&dev_C, size);
 
 //init all the matrix with a passed value
-    matrixInit(A,1);
-    matrixInit(B,2);
-    matrixInit(C,0);
+    matrixInit(A,1.0f);
+    matrixInit(B,2.0f);
+    matrixInit(C,0.0f);
 
     cout<<endl<<"PRINT A"<<endl;
     printMatrix(A);
