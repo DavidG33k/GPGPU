@@ -20,7 +20,7 @@ using namespace std;
 #define M 5
 #define N 5
 
-void matrixInit(float A[][N], float value)
+void matrixInit(double A[][N], double value)
 {
     for(int i=0; i<M; i++)
         for(int j=0; j<N; j++)
@@ -28,7 +28,7 @@ void matrixInit(float A[][N], float value)
 }
 
 __global__
-void matrixAdd(float* A, float* B, float* C)
+void matrixAdd(double* A, double* B, double* C)
 {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -40,7 +40,7 @@ void matrixAdd(float* A, float* B, float* C)
     }
 }
 
-void printMatrix(float A[][N])
+void printMatrix(double A[][N])
 {
     for(int i=0; i<M; i++)
     {
@@ -52,50 +52,41 @@ void printMatrix(float A[][N])
 
 int main()
 {
-// variables declaration
+//variables declaration
+    int size = M * N * sizeof(double); //expect a size in bytes
+
     dim3 dimBlock(16,16);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
- //create and allocate matrix A, B and C
-    float* A; cudaMallocManaged(&A, M*N*sizeof(float));
-    float* B; cudaMallocManaged(&B, M*N*sizeof(float));
-    float* C; cudaMallocManaged(&C, M*N*sizeof(float));
+//create and allocate matrix A, B and C
+    double* A; cudaMallocManaged(&A, size);
+    double* B; cudaMallocManaged(&B, size);
+    double* C; cudaMallocManaged(&C, size);
 
-    float valori_A[M][N];
-    float valori_B[M][N];
-    float valori_C[M][N];
+    double values_A[M][N];
+    double values_B[M][N];
+    double values_C[M][N];
 
-    matrixInit(valori_A, 1.0f);
-    matrixInit(valori_B, 2.0f);
-    matrixInit(valori_C, 0.0f);
+//init all the matrix with a passed value
+    matrixInit(values_A, 1.0f);
+    matrixInit(values_B, 2.0f);
+    matrixInit(values_C, 0.0f);
 
-    memcpy(&A[0], &valori_A[0][0], M*N*sizeof(float));
-    memcpy(&B[0], &valori_B[0][0], M*N*sizeof(float));
-    memcpy(&C[0], &valori_C[0][0], M*N*sizeof(float));
-
-    for(int i=0; i<M*N; i++)
-        cout << A[i] << " ";
-    cout<<endl;
-
-    for(int i=0; i<M*N; i++)
-        cout << B[i] << " ";
-    cout<<endl;
-
-    for(int i=0; i<M*N; i++)
-        cout << C[i] << " ";
-    cout<<endl;
-
+    memcpy(&A[0], &values_A[0][0], size);
+    memcpy(&B[0], &values_B[0][0], size);
+    memcpy(&C[0], &values_C[0][0], size);
  
  //addiction operation and print results
     matrixAdd<<<dimGrid, dimBlock>>>(A, B, C);
     cudaDeviceSynchronize();
 
-    memcpy(&valori_C[0][0], &C[0], M*N*sizeof(float));
+    memcpy(&values_C[0][0], &C[0], size);
 
-    //printing resulting matrix C
+//printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(valori_C);
+    printMatrix(values_C);
 
+//free cuda memory
     cudaFree(A); 
     cudaFree(B); 
     cudaFree(C);

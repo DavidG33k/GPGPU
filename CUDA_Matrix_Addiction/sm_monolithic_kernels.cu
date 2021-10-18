@@ -17,6 +17,7 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<iostream>
 #include<math.h>
 using namespace std;
+
 #define M 5
 #define N 5
 
@@ -52,15 +53,13 @@ void printMatrix(double A[][N])
 
 int main()
 {
-// variables declaration
+//variables declaration
     int size = M * N * sizeof(double); //expect a size in bytes
 
     dim3 dimBlock(16,16);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
-    cout << ((N+dimBlock.x-1)/dimBlock.x) << " " <<((M+dimBlock.y-1)/dimBlock.y)<<endl;
-    cout << (int)ceil((double)N/dimBlock.x) << " " << (int)ceil((double)N/dimBlock.y);
- //create and allocate matrix A, B and C
+//create and allocate matrix A, B and C
     double A[M][N];
     double B[M][N];
     double C[M][N];
@@ -76,28 +75,20 @@ int main()
     matrixInit(B,2.0f);
     matrixInit(C,0.0f);
 
-    cout<<endl<<"PRINT A"<<endl;
-    printMatrix(A);
-
-    cout<<endl<<"PRINT B"<<endl;
-    printMatrix(B);
-
-    cout<<endl<<"PRINT C"<<endl;
-    printMatrix(C);
-
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
  
- //addiction operation and print results
+//addiction operation and print results
     matrixAdd<<<dimGrid, dimBlock>>>(dev_A, dev_B, dev_C);
     cudaDeviceSynchronize();
 
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
 
-    //printing resulting matrix C
+//printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
     printMatrix(C);
 
+//free cuda memory
     cudaFree(dev_A); 
     cudaFree(dev_B); 
     cudaFree(dev_C);

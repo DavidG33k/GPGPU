@@ -21,8 +21,15 @@ using namespace std;
 #define M 5
 #define N 5
 
+void matrixInit(double A[][N], double value)
+{
+    for(int i=0; i<M; i++)
+        for(int j=0; j<N; j++)
+            A[i][j] = value;
+}
+
 __global__
-void add(double *A, double *B, double *C)
+void matrixAdd(double *A, double *B, double *C)
 {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int stride = blockDim.x * gridDim.x;
@@ -31,12 +38,25 @@ void add(double *A, double *B, double *C)
     C[i] = A[i] + B[i];
 }
 
-
+void printMatrix(double A[][N])
+{
+    for(int i=0; i<M; i++)
+    {
+        for(int j=0; j<N; j++)
+            cout<<" "<<A[i][j]<<" ";
+        cout<<endl;
+    }
+}
 
 int main()
 {
+//variables declaration
     double size = M * N * sizeof(double);
+    
+    int blockSize = 256;
+    int numBlocks = (M * N + blockSize - 1) / blockSize;
 
+//create and allocate matrix A, B and C
     double A[M][N];
     double B[M][N];
     double C[M][N];
@@ -47,34 +67,27 @@ int main()
     cudaMalloc((void**)&dev_B, size);
     cudaMalloc((void**)&dev_C, size);
 
-    for(int i=0; i<M; i++)
-        for(int j=0; j<N; j++) {
-            A[i][j] = 1.0f;
-            B[i][j] = 2.0f;
-            C[i][j] = 0.0f;
-        }
+//init all the matrix with a passed value
+    matrixInit(A,1.0f);
+    matrixInit(B,2.0f);
+    matrixInit(C,0.0f);
 
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
 
-
-    int blockSize = 256;
-    int numBlocks = (M * N + blockSize - 1) / blockSize;
-    add<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
-
+//addiction operation and print results
+    matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
     cudaDeviceSynchronize();
 
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
 
-    for(int i=0; i<M; i++) {
-      for (int j=0; j<N; j++) {
-        cout << C[i][j] << " ";
-      }
-    cout<<endl;
-    }
+//printing resulting matrix C
+    cout<<endl<<"PRINT C final"<<endl;
+    printMatrix(C);
 
-    cudaFree(dev_A);
-    cudaFree(dev_B);
+//free cuda memory
+    cudaFree(dev_A); 
+    cudaFree(dev_B); 
     cudaFree(dev_C);
 
     return 0;
