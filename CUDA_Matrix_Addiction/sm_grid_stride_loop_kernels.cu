@@ -8,10 +8,7 @@ Let A and B be the matrices of double-precision floating-point numbers to be add
 and C the resulting matrix; Let m = 2^12 and n=2^16 be their number of rows and columns, respectively.
 *
 Implement four versions of the matrix addition application in CUDA using:
-    - Standard-Memory/Monolithic-Kernels;
-    - Standard-Memory/Grid-Stride-Loop-Kernels;
-    - Unified-Memory/Monolithic-Kernels;
-    - Unified-Memory/Grid-Stride-Loop-Kernels.
+    - Standard-Memory/Grid-Stride-Loop-Kernels.
 */
 
 #include <algorithm>
@@ -84,13 +81,13 @@ int main()
 //addiction operation and print results
     matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
 
-cout<<endl<<"Sync starts"<<endl;
+    cout<<endl<<"Sync starts"<<endl;
     //cudaDeviceSynchronize();
-cout<<endl<<"Sync ends"<<endl;
+    cout<<endl<<"Sync ends"<<endl;
 
-cout<<endl<<"Copy starts"<<endl;
+    cout<<endl<<"Copy starts"<<endl;
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
-cout<<endl<<"Copy ends"<<endl;
+    cout<<endl<<"Copy ends"<<endl;
 
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
