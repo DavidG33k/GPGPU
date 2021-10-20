@@ -21,8 +21,14 @@ using namespace std;
 __global__
 void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M*N; i++)
-        A[i] = value;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int index = col + row * N;
+
+    if (col < N && row < M) {
+        A[index]=value;
+    }
 }
 
 __global__
@@ -70,7 +76,6 @@ int main()
 
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_C, C, size, cudaMemcpyHostToDevice);
 
 //init all the matrix with a passed value
     matrixInit<<<dimGrid, dimBlock>>>(dev_A,1.0);

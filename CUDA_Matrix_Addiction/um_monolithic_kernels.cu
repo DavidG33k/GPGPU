@@ -15,14 +15,20 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<math.h>
 using namespace std;
 
-#define M 4096 //m=2^12 = 4096
+#define M (1 << 12) //4096 //m=2^12 = 4096
 #define N 32768 //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M*N; i++)
-        A[i] = value;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int index = col + row * N;
+
+    if (col < N && row < M) {
+        A[index]=value;
+    }
 }
 
 __global__

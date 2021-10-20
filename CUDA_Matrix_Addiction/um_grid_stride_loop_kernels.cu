@@ -21,8 +21,11 @@ using namespace std;
 __global__
 void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M*N; i++)
-        A[i] = value;
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int stride = blockDim.x * gridDim.x;
+
+  for (int i = index; i < M*N; i += stride)
+    A[i]=value;
 }
 
 __global__
