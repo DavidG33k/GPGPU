@@ -5,7 +5,7 @@ GPGPU assignment 1: Matrix Addition in CUDA - Unified Memory/Monolithic Kernels 
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,
-and C the resulting matrix; Let m = 2^12 and n=2^16 be their number of rows and columns, respectively.
+and C the resulting matrix; Let m = 2^12 and n=2^15 be their number of rows and columns, respectively.
 *
 Implement four versions of the matrix addition application in CUDA using:
     - Unified-Memory/Monolithic-Kernels.
@@ -14,8 +14,9 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<iostream>
 #include<math.h>
 using namespace std;
-#define M 1500
-#define N 500
+
+#define M 4096 //m=2^12 = 4096
+#define N 32768 //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
@@ -37,20 +38,17 @@ void matrixAdd(double* A, double* B, double* C)
     }
 }
 
-void printMatrix(double A[][N])
+void printMatrix(double* A)
 {
-    for(int i=0; i<M; i++)
-    {
-        for(int j=0; j<N; j++)
-            cout<<" "<<A[i][j]<<" ";
-        cout<<endl;
-    }
+    for(int i=0; i<M*N; i++)
+        cout<<" "<<A[i]<<" ";
 }
 
 int main()
 {
 //variables declaration
-    int size = M * N * sizeof(double); //expect a size in bytes
+    double size = M * N * sizeof(double); //expect a size in bytes
+    cout<<"size: "<<size<<endl;
 
     dim3 dimBlock(16,16);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
@@ -67,6 +65,7 @@ int main()
     cout<<endl<<"M-init done"<<endl;
  
  //addiction operation and print results
+    cout<<endl<<"add starts"<<endl;
     matrixAdd<<<dimGrid, dimBlock>>>(A, B, C);
 
     cout<<endl<<"Sync starts"<<endl;

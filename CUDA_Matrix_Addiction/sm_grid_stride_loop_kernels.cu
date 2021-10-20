@@ -5,7 +5,7 @@ GPGPU assignment 1: Matrix Addition in CUDA - Standard Memory/Grid Stride Loop K
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,
-and C the resulting matrix; Let m = 2^12 and n=2^16 be their number of rows and columns, respectively.
+and C the resulting matrix; Let m = 2^12 and n=2^15 be their number of rows and columns, respectively.
 *
 Implement four versions of the matrix addition application in CUDA using:
     - Standard-Memory/Grid-Stride-Loop-Kernels.
@@ -15,8 +15,8 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <iostream>
 using namespace std;
 
-#define M 1240
-#define N 1500
+#define M 4096 //m=2^12 = 4096
+#define N 32768 //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
@@ -35,20 +35,17 @@ void matrixAdd(double *A, double *B, double *C)
     C[i] = A[i] + B[i];
 }
 
-void printMatrix(double A[][N])
+void printMatrix(double* A)
 {
-    for(int i=0; i<M; i++)
-    {
-        for(int j=0; j<N; j++)
-            cout<<" "<<A[i][j]<<" ";
-        cout<<endl;
-    }
+    for(int i=0; i<M*N; i++)
+        cout<<" "<<A[i]<<" ";
 }
 
 int main()
 {
 //variables declaration
     double size = M * N * sizeof(double);
+    cout<<"size: "<<size<<endl;
     
     int blockSize = 256;
     int numBlocks = (M * N + blockSize - 1) / blockSize;
@@ -79,15 +76,17 @@ int main()
     cout<<endl<<"M-init done"<<endl;
 
 //addiction operation and print results
+    cout<<endl<<"add starts"<<endl;
     matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
+    cout<<endl<<"add ends"<<endl;
 
-    cout<<endl<<"Sync starts"<<endl;
-    //cudaDeviceSynchronize();
-    cout<<endl<<"Sync ends"<<endl;
+    // cout<<endl<<"synch starts"<<endl;
+    // cudaDeviceSynchronize();
+    // cout<<endl<<"synch ends"<<endl;
 
-    cout<<endl<<"Copy starts"<<endl;
+    cout<<endl<<"final copy starts"<<endl;
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
-    cout<<endl<<"Copy ends"<<endl;
+    cout<<endl<<"final copy ends"<<endl;
 
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;

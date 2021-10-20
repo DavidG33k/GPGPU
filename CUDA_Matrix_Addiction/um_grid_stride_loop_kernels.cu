@@ -5,7 +5,7 @@ GPGPU assignment 1: Matrix Addition in CUDA - Unified Memory/Grid Stride Loop Ke
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,
-and C the resulting matrix; Let m = 2^12 and n=2^16 be their number of rows and columns, respectively.
+and C the resulting matrix; Let m = 2^12 and n=2^15 be their number of rows and columns, respectively.
 *
 Implement four versions of the matrix addition application in CUDA using:
     - Unified-Memory/Grid-Stride-Loop-Kernels.
@@ -15,8 +15,8 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <iostream>
 using namespace std;
 
-#define M 1024
-#define N 2048
+#define M 4096 //m=2^12 = 4096
+#define N 32768 //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
@@ -44,7 +44,8 @@ void printMatrix(double* A)
 int main()
 {
 //variables declaration
-    int size = M * N * sizeof(double); //expect a size in bytes
+    double size = M * N * sizeof(double); //expect a size in bytes
+    cout<<"size: "<<size<<endl;
 
     int blockSize = 256;
     int numBlocks = (M * N + blockSize - 1) / blockSize;
@@ -62,7 +63,7 @@ int main()
     cout<<endl<<"M-init done"<<endl;
     
 //addiction operation and print results
-
+    cout<<endl<<"add starts"<<endl;
     matrixAdd<<<numBlocks, blockSize>>>(A, B, C);
 
     cout<<endl<<"Sync starts"<<endl;
