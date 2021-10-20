@@ -21,21 +21,27 @@ using namespace std;
 __global__
 void matrixInit(double* A, double value)
 {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int stride = blockDim.x * gridDim.x;
+  int index_x = blockIdx.x * blockDim.x + threadIdx.x;
+  int index_y = blockIdx.y * blockDim.y + threadIdx.y;
+  int stride_x = blockDim.x * gridDim.x;
+  int stride_y = blockDim.y * gridDim.y;
 
-  for (int i = index; i < M*N; i += stride)
-    A[i]=value;
+  for (int i = index_x; i < M; i += stride_x)
+    for (int j = index_y; j < N; i += stride_y)
+        A[j*M+i]=value;
 }
 
 __global__
 void matrixAdd(double *A, double *B, double *C)
 {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int stride = blockDim.x * gridDim.x;
+  int index_x = blockIdx.x * blockDim.x + threadIdx.x;
+  int index_y = blockIdx.y * blockDim.y + threadIdx.y;
+  int stride_x = blockDim.x * gridDim.x;
+  int stride_y = blockDim.y * gridDim.y;
 
-  for (int i = index; i < M*N; i += stride)
-    C[i] = A[i] + B[i];
+  for (int i = index_x; i < M; i += stride_x)
+    for (int j = index_y; j < N; i += stride_y)
+        C[j*M+i] = A[j*M+i] + B[j*M+i];
 }
 
 void printMatrix(double* A)
@@ -50,8 +56,8 @@ int main()
     double size = M * N * sizeof(double); //expect a size in bytes
     cout<<"size: "<<size<<endl;
 
-    int blockSize = 256;
-    int numBlocks = (M * N + blockSize - 1) / blockSize;
+    dim3 dimBlock(16,16);
+    dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
 
 //create and allocate matrix A, B and C
