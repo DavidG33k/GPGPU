@@ -18,14 +18,14 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <iostream>
 using namespace std;
 
-#define M 5
-#define N 5
+#define M 1024
+#define N 2048
 
-void matrixInit(double A[][N], double value)
+__global__
+void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M; i++)
-        for(int j=0; j<N; j++)
-            A[i][j] = value;
+    for(int i=0; i<M*N; i++)
+        A[i] = value;
 }
 
 __global__
@@ -38,13 +38,13 @@ void matrixAdd(double *A, double *B, double *C)
     C[i] = A[i] + B[i];
 }
 
-void printMatrix(double A[][N])
+void printMatrix(double* A)
 {
-    for(int i=0; i<M; i++)
+    for(int i=0; i<M*N; i++)
     {
-        for(int j=0; j<N; j++)
-            cout<<" "<<A[i][j]<<" ";
-        cout<<endl;
+        cout<<" "<<A[i]<<" ";
+        if(i%6==0)
+            cout<<endl;
     }
 }
 
@@ -62,28 +62,23 @@ int main()
     double* B; cudaMallocManaged(&B, size);
     double* C; cudaMallocManaged(&C, size);
 
-    double values_A[M][N];
-    double values_B[M][N];
-    double values_C[M][N];
-
 //init all the matrix with a passed value
-    matrixInit(values_A,1.0f);
-    matrixInit(values_B,2.0f);
-    matrixInit(values_C,0.0f);
-
-    memcpy(&A[0], &values_A[0][0], size);
-    memcpy(&B[0], &values_B[0][0], size);
-    memcpy(&C[0], &values_C[0][0], size);
+    matrixInit<<<numBlocks, blockSize>>>(A,1.0);
+    matrixInit<<<numBlocks, blockSize>>>(B,2.0);
+    matrixInit<<<numBlocks, blockSize>>>(C,0.0);
+    cout<<endl<<"M-init done"<<endl;
     
 //addiction operation and print results
-    matrixAdd<<<numBlocks, blockSize>>>(A, B, C);
-    cudaDeviceSynchronize();
 
-    memcpy(&values_C[0][0], &C[0], size);
+    matrixAdd<<<numBlocks, blockSize>>>(A, B, C);
+
+cout<<endl<<"Sync starts"<<endl;
+    cudaDeviceSynchronize();
+cout<<endl<<"Sync ends"<<endl;
 
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(values_C);
+    //printMatrix(C);
 
     cudaFree(A);
     cudaFree(B);

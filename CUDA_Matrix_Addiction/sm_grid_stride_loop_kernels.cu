@@ -18,14 +18,14 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <iostream>
 using namespace std;
 
-#define M 5
-#define N 5
+#define M 1240
+#define N 1500
 
-void matrixInit(double A[][N], double value)
+__global__
+void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M; i++)
-        for(int j=0; j<N; j++)
-            A[i][j] = value;
+    for(int i=0; i<M*N; i++)
+        A[i] = value;
 }
 
 __global__
@@ -57,33 +57,44 @@ int main()
     int numBlocks = (M * N + blockSize - 1) / blockSize;
 
 //create and allocate matrix A, B and C
-    double A[M][N];
-    double B[M][N];
-    double C[M][N];
+    //allocate dynamic matrix
+    double *A, *B, *C; //host matrix
 
-    double *dev_A, *dev_B, *dev_C;
+    //in standard memory we have to allocate CPU
+    A = (double*)malloc(size);
+    B = (double*)malloc(size);
+    C = (double*)malloc(size);
+
+    double *dev_A, *dev_B, *dev_C; //device matrix
 
     cudaMalloc((void**)&dev_A, size);
     cudaMalloc((void**)&dev_B, size);
     cudaMalloc((void**)&dev_C, size);
 
-//init all the matrix with a passed value
-    matrixInit(A,1.0f);
-    matrixInit(B,2.0f);
-    matrixInit(C,0.0f);
-
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_C, C, size, cudaMemcpyHostToDevice);
+
+//init all the matrix with a passed value
+    matrixInit<<<numBlocks, blockSize>>>(dev_A,1.0);
+    matrixInit<<<numBlocks, blockSize>>>(dev_B,2.0);
+    matrixInit<<<numBlocks, blockSize>>>(dev_C,0.0);
+    cout<<endl<<"M-init done"<<endl;
 
 //addiction operation and print results
     matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
-    cudaDeviceSynchronize();
 
+cout<<endl<<"Sync starts"<<endl;
+    //cudaDeviceSynchronize();
+cout<<endl<<"Sync ends"<<endl;
+
+cout<<endl<<"Copy starts"<<endl;
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
+cout<<endl<<"Copy ends"<<endl;
 
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(C);
+    //printMatrix(C);
 
 //free cuda memory
     cudaFree(dev_A); 

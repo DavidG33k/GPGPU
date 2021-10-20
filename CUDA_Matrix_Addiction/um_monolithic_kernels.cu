@@ -17,14 +17,14 @@ Implement four versions of the matrix addition application in CUDA using:
 #include<iostream>
 #include<math.h>
 using namespace std;
-#define M 5
-#define N 5
+#define M 1500
+#define N 500
 
-void matrixInit(double A[][N], double value)
+__global__
+void matrixInit(double* A, double value)
 {
-    for(int i=0; i<M; i++)
-        for(int j=0; j<N; j++)
-            A[i][j] = value;
+    for(int i=0; i<M*N; i++)
+        A[i] = value;
 }
 
 __global__
@@ -63,28 +63,22 @@ int main()
     double* B; cudaMallocManaged(&B, size);
     double* C; cudaMallocManaged(&C, size);
 
-    double values_A[M][N];
-    double values_B[M][N];
-    double values_C[M][N];
-
 //init all the matrix with a passed value
-    matrixInit(values_A, 1.0f);
-    matrixInit(values_B, 2.0f);
-    matrixInit(values_C, 0.0f);
-
-    memcpy(&A[0], &values_A[0][0], size);
-    memcpy(&B[0], &values_B[0][0], size);
-    memcpy(&C[0], &values_C[0][0], size);
+    matrixInit<<<dimGrid, dimBlock>>>(A,1.0);
+    matrixInit<<<dimGrid, dimBlock>>>(B,2.0);
+    matrixInit<<<dimGrid, dimBlock>>>(C,0.0);
+    cout<<endl<<"M-init done"<<endl;
  
  //addiction operation and print results
     matrixAdd<<<dimGrid, dimBlock>>>(A, B, C);
-    cudaDeviceSynchronize();
 
-    memcpy(&values_C[0][0], &C[0], size);
+cout<<endl<<"Sync starts"<<endl;
+    cudaDeviceSynchronize();
+cout<<endl<<"Sync ends"<<endl;
 
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(values_C);
+    //printMatrix(values_C);
 
 //free cuda memory
     cudaFree(A); 
