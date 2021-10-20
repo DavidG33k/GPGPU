@@ -78,14 +78,14 @@ int main()
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
 
 //init all the matrix with a passed value
-    matrixInit<<<numBlocks, blockSize>>>(dev_A,1.0);
-    matrixInit<<<numBlocks, blockSize>>>(dev_B,2.0);
-    matrixInit<<<numBlocks, blockSize>>>(dev_C,0.0);
+    matrixInit<<<dimGrid, dimBlock>>>(dev_A,1.0);
+    matrixInit<<<dimGrid, dimBlock>>>(dev_B,2.0);
+    matrixInit<<<dimGrid, dimBlock>>>(dev_C,0.0);
     cout<<endl<<"M-init done"<<endl;
 
 //addiction operation and print results
     cout<<endl<<"add starts"<<endl;
-    matrixAdd<<<numBlocks, blockSize>>>(dev_A, dev_B, dev_C);
+    matrixAdd<<<dimGrid, dimBlock>>>(dev_A, dev_B, dev_C);
     cout<<endl<<"add ends"<<endl;
 
     // cout<<endl<<"synch starts"<<endl;

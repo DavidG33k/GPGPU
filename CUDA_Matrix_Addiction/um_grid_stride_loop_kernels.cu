@@ -66,14 +66,14 @@ int main()
     double* C; cudaMallocManaged(&C, size);
 
 //init all the matrix with a passed value
-    matrixInit<<<numBlocks, blockSize>>>(A,1.0);
-    matrixInit<<<numBlocks, blockSize>>>(B,2.0);
-    matrixInit<<<numBlocks, blockSize>>>(C,0.0);
+    matrixInit<<<dimGrid, dimBlock>>>(A,1.0);
+    matrixInit<<<dimGrid, dimBlock>>>(B,2.0);
+    matrixInit<<<dimGrid, dimBlock>>>(C,0.0);
     cout<<endl<<"M-init done"<<endl;
     
 //addiction operation and print results
     cout<<endl<<"add starts"<<endl;
-    matrixAdd<<<numBlocks, blockSize>>>(A, B, C);
+    matrixAdd<<<dimGrid, dimBlock>>>(A, B, C);
 
     cout<<endl<<"Sync starts"<<endl;
     cudaDeviceSynchronize();
