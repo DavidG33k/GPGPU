@@ -1,7 +1,7 @@
 /**
 GPGPU assignment 1: Matrix Addition in CUDA - Standard Memory/Monolithic Kernels version
     @file sm_monolithic_kernels.cu
-    @author Canonaco Martina @author Gena Davide @author Morello Michele
+    @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,

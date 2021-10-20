@@ -1,7 +1,7 @@
 /**
 GPGPU assignment 1: Matrix Addition in CUDA - Unified Memory/Grid Stride Loop Kernels version
     @file um_grid_stride_loop_kernels.cu
-    @author Canonaco Martina @author Gena Davide @author Morello Michele
+    @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
     @version 13 October 2021 
 *
 Let A and B be the matrices of double-precision floating-point numbers to be added,
