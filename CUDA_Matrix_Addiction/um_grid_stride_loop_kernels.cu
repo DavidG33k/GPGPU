@@ -27,7 +27,7 @@ void matrixInit(double* A, double value)
   int stride_y = blockDim.y * gridDim.y;
 
   for (int i = index_x; i < M; i += stride_x)
-    for (int j = index_y; j < N; i += stride_y)
+    for (int j = index_y; j < N; j += stride_y)
         A[j*M+i]=value;
 }
 
@@ -40,7 +40,7 @@ void matrixAdd(double *A, double *B, double *C)
   int stride_y = blockDim.y * gridDim.y;
 
   for (int i = index_x; i < M; i += stride_x)
-    for (int j = index_y; j < N; i += stride_y)
+    for (int j = index_y; j < N; j += stride_y)
         C[j*M+i] = A[j*M+i] + B[j*M+i];
 }
 
@@ -82,6 +82,13 @@ int main()
 //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
     //printMatrix(C);
+
+// Check for errors (all values should be 3.0f)
+    float maxError = 0;
+    for (int i = 0; i < M * N; i++)
+	maxError=fmax(maxError, fabs(C[i]-3.0f));
+    cout << "Max error: " << maxError << endl;
+
 
     cudaFree(A);
     cudaFree(B);

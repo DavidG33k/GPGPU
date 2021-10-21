@@ -82,6 +82,13 @@ int main()
     cout<<endl<<"PRINT C final"<<endl;
     //printMatrix(values_C);
 
+// Check for errors (all values should be 3.0f)
+    float maxError = 0;
+    for (int i = 0; i < M * N; i++)
+	maxError=fmax(maxError, fabs(C[i]-3.0f));
+    cout << "Max error: " << maxError << endl;
+
+
 //free cuda memory
     cudaFree(A); 
     cudaFree(B); 

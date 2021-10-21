@@ -77,8 +77,16 @@ int main()
 
     //printing resulting matrix C
     cout<<endl<<"PRINT C final"<<endl;
-    printMatrix(C);
+    //printMatrix(C);
     #pragma endregion
+
+// Check for errors (all values should be 3.0f)
+    float maxError = 0;
+    for (int i = 0; i < m; i++)
+	for(int j=0 j<n; j++)
+		maxError=fmax(maxError, fabs(C[i][j]-3.0f));
+    cout << "Max error: " << maxError << endl;
+
 
     #pragma region //delete matrix
     deleteMatrix(A);
