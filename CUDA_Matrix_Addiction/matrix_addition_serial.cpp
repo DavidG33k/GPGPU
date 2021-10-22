@@ -12,10 +12,11 @@ Reduce m and n.
 */
 #include<iostream>
 #include<math.h>
+#include<time.h>
 using namespace std;
 
-const int m = pow(2,2);
-const int n = pow(2,3);
+const int m = pow(2,10);
+const int n = pow(2,15);
 
 void matrixAlloc(double** A)
 {
@@ -64,29 +65,44 @@ int main()
     matrixAlloc(A);
     matrixAlloc(B);
     matrixAlloc(C);
+
+    //tracking the time
+    clock_t tInit, tAdd;
     #pragma endregion
 
     #pragma region //init all the matrix with a passed value
+    //tracking init time
+    tInit = clock();
     matrixInit(A,1);
     matrixInit(B,2);
     matrixInit(C,0);
+
+    cout.precision(10);
+    cout << "Init time: "<<tInit<<" clocks in "<<((double)(clock() - tInit))/CLOCKS_PER_SEC<<" sec"<<endl;
     #pragma endregion
 
     #pragma region //addiction operation and print results
+    //tracking addiction time
+    tAdd = clock();
     matrixAdd(A,B,C);
 
-    //printing resulting matrix C
+    cout.precision(10);
+    cout << "Add time: "<<tAdd<<" clocks in "<<((double)(clock() - tAdd))/CLOCKS_PER_SEC<<" sec"<<endl;
+
+    //printing resulting matrix C and resulting time
     cout<<endl<<"PRINT C final"<<endl;
+    cout.precision(10);
+    cout << "Total time for size="<<m*n<<" : "<<tInit+tAdd<<" clocks in "<<((double)(clock() - (tInit + tAdd)))/CLOCKS_PER_SEC<<" sec"<<endl;
     //printMatrix(C);
     #pragma endregion
 
-// Check for errors (all values should be 3.0f)
+    #pragma region //check for errors (all values should be 3.0f)
     float maxError = 0;
     for (int i = 0; i < m; i++)
-	for(int j=0 j<n; j++)
+	for(int j=0; j<n; j++)
 		maxError=fmax(maxError, fabs(C[i][j]-3.0f));
     cout << "Max error: " << maxError << endl;
-
+    #pragma endregion
 
     #pragma region //delete matrix
     deleteMatrix(A);
