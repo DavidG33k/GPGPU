@@ -15,8 +15,8 @@ Reduce m and n.
 #include<time.h>
 using namespace std;
 
-const int m = pow(2,10);
-const int n = pow(2,15);
+const int m = pow(2,12);
+const int n = pow(2,14);
 
 void matrixAlloc(double** A)
 {

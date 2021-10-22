@@ -56,7 +56,7 @@ int main()
     double size = M * N * sizeof(double); //expect a size in bytes
     cout<<"size: "<<size<<endl;
 
-    dim3 dimBlock(16,16);
+    dim3 dimBlock(32,32);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
 
 //create and allocate matrix A, B and C
