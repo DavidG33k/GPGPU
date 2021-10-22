@@ -67,32 +67,33 @@ int main()
     matrixAlloc(C);
 
     //tracking the time
-    clock_t tInit, tAdd;
+    clock_t start, end;
     #pragma endregion
 
     #pragma region //init all the matrix with a passed value
     //tracking init time
-    tInit = clock();
+    start=clock();
     matrixInit(A,1);
     matrixInit(B,2);
     matrixInit(C,0);
+    end=clock();
 
     cout.precision(10);
-    cout << "Init time: "<<tInit<<" clocks in "<<((double)(clock() - tInit))/CLOCKS_PER_SEC<<" sec"<<endl;
+    cout << "Init time: "<<((double)(end-start))/CLOCKS_PER_SEC<<" sec"<<endl;
     #pragma endregion
 
     #pragma region //addiction operation and print results
     //tracking addiction time
-    tAdd = clock();
+    start=clock();
     matrixAdd(A,B,C);
+    end=clock();
 
     cout.precision(10);
-    cout << "Add time: "<<tAdd<<" clocks in "<<((double)(clock() - tAdd))/CLOCKS_PER_SEC<<" sec"<<endl;
+    cout << "Add time: "<<((double)(end-start))/CLOCKS_PER_SEC<<" sec"<<endl;
 
     //printing resulting matrix C and resulting time
     cout<<endl<<"PRINT C final"<<endl;
     cout.precision(10);
-    cout << "Total time for size="<<m*n<<" : "<<tInit+tAdd<<" clocks in "<<((double)(clock() - (tInit + tAdd)))/CLOCKS_PER_SEC<<" sec"<<endl;
     //printMatrix(C);
     #pragma endregion
 
