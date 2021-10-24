@@ -16,8 +16,8 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <math.h>
 using namespace std;
 
-#define M 4096 //m=2^12 = 4096
-#define N 32768 //n=2^15 = 32768
+#define M (1 << 12) //m=2^12 = 4096
+#define N (1 << 15) //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
@@ -82,33 +82,23 @@ int main()
     matrixInit<<<dimGrid, dimBlock>>>(dev_A,1.0);
     matrixInit<<<dimGrid, dimBlock>>>(dev_B,2.0);
     matrixInit<<<dimGrid, dimBlock>>>(dev_C,0.0);
-    cout<<endl<<"M-init done"<<endl;
 
 //addiction operation and print results
-    cout<<endl<<"add starts"<<endl;
     matrixAdd<<<dimGrid, dimBlock>>>(dev_A, dev_B, dev_C);
-    cout<<endl<<"add ends"<<endl;
 
-    // cout<<endl<<"synch starts"<<endl;
-    //cudaDeviceSynchronize();
-    // cout<<endl<<"synch ends"<<endl;
+    cudaDeviceSynchronize();
 
-    cout<<endl<<"final copy starts"<<endl;
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
-    cout<<endl<<"final copy ends"<<endl;
 
 //printing resulting matrix C
-    cout<<endl<<"PRINT C final"<<endl;
+    cout<<endl<<"MatrixC final"<<endl;
     //printMatrix(C);
 
 // Check for errors (all values should be 3.0f)
     float maxError = 0;
     for (int i = 0; i < M * N; i++)
-	maxError=fmax(maxError, fabs(C[i]-3.0f));
+	    maxError=fmax(maxError, fabs(C[i]-3.0f));
     cout << "Max error: " << maxError << endl;
-
-
-     	
 
 //free cuda memory
     cudaFree(dev_A); 

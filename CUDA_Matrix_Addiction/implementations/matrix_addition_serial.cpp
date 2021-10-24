@@ -79,7 +79,7 @@ int main()
     end=clock();
 
     cout.precision(100);
-    cout << "Init time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000000<<" ms"<<endl;
+    cout << "Init time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000<<" ms"<<endl;
     #pragma endregion
 
     #pragma region //addiction operation and print results
@@ -89,7 +89,7 @@ int main()
     end=clock();
 
     cout.precision(100);
-    cout << "Add time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000000<<" ms"<<endl;
+    cout << "Add time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000<<" ms"<<endl;
 
     //printing resulting matrix C and resulting time
     cout<<endl<<"PRINT C final"<<endl;
