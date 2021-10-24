@@ -1,0 +1,63 @@
+1.
+sm_grid_stride (8x8):
+total_time: 17.8103 ms;
+matrixInit min_time: 2.8459 ms;
+matrixAdd min_time: 8.3702 ms;
+
+sm_grid_stride (16x16);
+total_time: 16.8471 ms;
+matrixInit min_time: 2.7161 ms;
+matrixAdd min_time: 8.3837 ms;
+
+sm_grid_stride (32x32):
+total_time: 20.0057 ms;
+matrixinit min_time: 3.3245 ms;
+matrixAdd min_time: 9.2167 ms;
+
+2.
+sm_monolithic (8x8):
+total_time: 17.4322 ms;
+matrixInit min_time: 2.7619 ms;
+matrixAdd min_time: 8.1356 ms;
+
+sm_monolithic (16x16):
+total_time: 17.1953 ms;
+matrixInit min_time: 2.8434 ms;
+matrixAdd min_time: 8.0879 ms;
+
+sm_monolithic (32x32):
+total_time: 17.4004 ms;
+matrixInit min_time: 2.8603 ms;
+matrixAdd min_time: 8.2588 ms;
+
+3.
+um_grid_stride (8x8):
+total_time: 16.8261 ms;
+matrixInit min_time: 2.7451 ms;
+matrixAdd min_time: 8.2940 ms;
+
+um_grid_stride (16x16):
+total_time: 17.9965 ms;
+matrixInit min_time: 2.8815 ms;
+matrixAdd min_time: 8.0569 ms;
+
+um_grid_stride (32x32):
+total_time: 21.3941 ms;
+matrixInit min_time: 3.5874 ms;
+matrixAdd min_time: 9.8441 ms;
+
+4.
+um_monolithic (8x8):
+total_time: 16.6474 ms;
+matrixInit min_time: 2.6910 ms;
+matrixAdd min_time: 8.2622 ms;
+
+um_monolithic (16x16):
+total_time: 18.4254 ms;
+matrixInit min_time: 2.9325 ms;
+matrixAdd min_time: 8.9650 ms;
+
+um_monolithic (32x32):
+total_time: 17.7592 ms;
+matrixInit min_time: 2.8729 ms;
+matrixAdd min_time: 8.0505 ms;

@@ -1,4 +1,0 @@
-Init time: 1,278 sec
-Add time: 0,294 sec
-
-tot: 1,572 sec

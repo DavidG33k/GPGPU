@@ -15,8 +15,8 @@ Reduce m and n.
 #include<time.h>
 using namespace std;
 
-const int m = pow(2,12);
-const int n = pow(2,14);
+const int m = pow(2,10);
+const int n = pow(2,11);
 
 void matrixAlloc(double** A)
 {
@@ -78,8 +78,8 @@ int main()
     matrixInit(C,0);
     end=clock();
 
-    cout.precision(10);
-    cout << "Init time: "<<((double)(end-start))/CLOCKS_PER_SEC<<" sec"<<endl;
+    cout.precision(100);
+    cout << "Init time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000000<<" ms"<<endl;
     #pragma endregion
 
     #pragma region //addiction operation and print results
@@ -88,12 +88,11 @@ int main()
     matrixAdd(A,B,C);
     end=clock();
 
-    cout.precision(10);
-    cout << "Add time: "<<((double)(end-start))/CLOCKS_PER_SEC<<" sec"<<endl;
+    cout.precision(100);
+    cout << "Add time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000000<<" ms"<<endl;
 
     //printing resulting matrix C and resulting time
     cout<<endl<<"PRINT C final"<<endl;
-    cout.precision(10);
     //printMatrix(C);
     #pragma endregion
 

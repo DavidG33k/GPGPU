@@ -1,0 +1,34 @@
+2^27
+Init time: 1134 ms
+Add time: 250 ms
+tot: 1384 ms
+
+2^26
+Init time: 966 ms
+Add time: 267 ms
+tot: 1233 ms
+
+2^25
+Init time: 646 ms
+Add time: 186 ms
+tot: 832 ms
+
+2^24
+Init time: 282 ms
+Add time: 74 ms
+tot: 356 ms
+
+2^23
+Init time: 240 ms
+Add time: 74 ms
+tot: 314 ms
+
+2^22
+Init time: 81 ms
+Add time: 24 ms
+tot: 105 ms
+
+2^21
+Init time: 40 ms
+Add time: 9 ms
+tot: 49 ms
