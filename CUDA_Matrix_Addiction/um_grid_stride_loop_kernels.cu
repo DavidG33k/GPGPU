@@ -15,8 +15,8 @@ Implement four versions of the matrix addition application in CUDA using:
 #include <iostream>
 using namespace std;
 
-#define M 4096 //m=2^12 = 4096
-#define N 32768 //n=2^15 = 32768
+#define M (1 << 12) //m=2^12 = 4096
+#define N (1 << 15) //n=2^15 = 32768
 
 __global__
 void matrixInit(double* A, double value)
