@@ -53,14 +53,15 @@ void printMatrix(double* A)
 
 int main()
 {
-//variables declaration
+#pragma region //variables declaration
     double size = M * N * sizeof(double);
     cout<<"size: "<<size<<endl;
     
     dim3 dimBlock(32,32);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
+#pragma endregion
 
-//create and allocate matrix A, B and C
+#pragma region //create and allocate matrix A, B and C
     //allocate dynamic matrix
     double *A, *B, *C; //host matrix
 
@@ -77,33 +78,38 @@ int main()
 
     cudaMemcpy(dev_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_B, B, size, cudaMemcpyHostToDevice);
+#pragma endregion
 
-//init all the matrix with a passed value
+#pragma region //init all the matrix with a passed value
     matrixInit<<<dimGrid, dimBlock>>>(dev_A,1.0);
     matrixInit<<<dimGrid, dimBlock>>>(dev_B,2.0);
     matrixInit<<<dimGrid, dimBlock>>>(dev_C,0.0);
+#pragma endregion
 
-//addiction operation and print results
+#pragma region //addiction operation and print results
     matrixAdd<<<dimGrid, dimBlock>>>(dev_A, dev_B, dev_C);
 
     cudaDeviceSynchronize();
 
     cudaMemcpy(C, dev_C, size, cudaMemcpyDeviceToHost);
 
-//printing resulting matrix C
+    //printing resulting matrix C
     cout<<endl<<"MatrixC final"<<endl;
     //printMatrix(C);
+#pragma endregion
 
-// Check for errors (all values should be 3.0f)
+#pragma region //check for errors (all values should be 3.0f)
     float maxError = 0;
     for (int i = 0; i < M * N; i++)
 	    maxError=fmax(maxError, fabs(C[i]-3.0f));
     cout << "Max error: " << maxError << endl;
+#pragma endregion
 
-//free cuda memory
+#pragma region //free cuda memory
     cudaFree(dev_A); 
     cudaFree(dev_B); 
     cudaFree(dev_C);
+#pragma region
 
     return 0;
 }

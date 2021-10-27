@@ -52,42 +52,48 @@ void printMatrix(double* A)
 
 int main()
 {
-//variables declaration
+#pragma region //variables declaration
     double size = M * N * sizeof(double); //expect a size in bytes
     cout<<"size: "<<size<<endl;
 
     dim3 dimBlock(16,16);
     dim3 dimGrid(((N+dimBlock.x-1)/dimBlock.x),((M+dimBlock.y-1)/dimBlock.y));
+#pragma endregion
 
-//create and allocate matrix A, B and C
+#pragma region //create and allocate matrix A, B and C
     double* A; cudaMallocManaged(&A, size);
     double* B; cudaMallocManaged(&B, size);
     double* C; cudaMallocManaged(&C, size);
+#pragma endregion
 
-//init all the matrix with a passed value
+#pragma region //init all the matrix with a passed value
     matrixInit<<<dimGrid, dimBlock>>>(A,1.0);
     matrixInit<<<dimGrid, dimBlock>>>(B,2.0);
     matrixInit<<<dimGrid, dimBlock>>>(C,0.0);
+#pragma endregion
 
- //addiction operation and print results
+#pragma region //addiction operation and print results
     matrixAdd<<<dimGrid, dimBlock>>>(A, B, C);
 
     cudaDeviceSynchronize();
 
-//printing resulting matrix C
+    //printing resulting matrix C
     cout<<endl<<"MatrixC final"<<endl;
     //printMatrix(values_C);
+#pragma endregion
 
-// Check for errors (all values should be 3.0f)
+#pragma region //check for errors (all values should be 3.0f)
     float maxError = 0;
     for (int i = 0; i < M * N; i++)
 	    maxError=fmax(maxError, fabs(C[i]-3.0f));
     cout << "Max error: " << maxError << endl;
+#pragma endregion
 
-//free cuda memory
+#pragma region //free cuda memory
     cudaFree(A); 
     cudaFree(B); 
     cudaFree(C);
+#pragma endregion
     
     return 0;
 }

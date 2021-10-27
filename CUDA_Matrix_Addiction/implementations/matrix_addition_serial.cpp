@@ -15,8 +15,8 @@ Reduce m and n.
 #include<time.h>
 using namespace std;
 
-const int m = pow(2,10);
-const int n = pow(2,11);
+const int m = (1 << 12);
+const int n = (1 << 15);
 
 void matrixAlloc(double** A)
 {
@@ -57,7 +57,7 @@ void deleteMatrix(double** A)
 
 int main()
 {
-    #pragma region //create and allocate matrix A, B and C
+#pragma region //create and allocate matrix A, B and C
     double **A = new double*[m];
     double **B = new double*[m];
     double **C = new double*[m];
@@ -68,9 +68,9 @@ int main()
 
     //tracking the time
     clock_t start, end;
-    #pragma endregion
+#pragma endregion
 
-    #pragma region //init all the matrix with a passed value
+#pragma region //init all the matrix with a passed value
     //tracking init time
     start=clock();
     matrixInit(A,1);
@@ -80,9 +80,9 @@ int main()
 
     cout.precision(100);
     cout << "Init time: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000<<" ms"<<endl;
-    #pragma endregion
+#pragma endregion
 
-    #pragma region //addiction operation and print results
+#pragma region //addiction operation and print results
     //tracking addiction time
     start=clock();
     matrixAdd(A,B,C);
@@ -94,21 +94,21 @@ int main()
     //printing resulting matrix C and resulting time
     cout<<endl<<"PRINT C final"<<endl;
     //printMatrix(C);
-    #pragma endregion
+#pragma endregion
 
-    #pragma region //check for errors (all values should be 3.0f)
+#pragma region //check for errors (all values should be 3.0f)
     float maxError = 0;
     for (int i = 0; i < m; i++)
 	for(int j=0; j<n; j++)
 		maxError=fmax(maxError, fabs(C[i][j]-3.0f));
     cout << "Max error: " << maxError << endl;
-    #pragma endregion
+#pragma endregion
 
-    #pragma region //delete matrix
+#pragma region //delete matrix
     deleteMatrix(A);
     deleteMatrix(B);
     deleteMatrix(C);
-    #pragma endregion
+#pragma endregion
     
     return 0;
 }
