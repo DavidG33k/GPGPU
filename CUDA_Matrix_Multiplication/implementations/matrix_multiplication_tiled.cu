@@ -79,24 +79,10 @@ int main()
     dim3 dimGrid_P(((d3+dimBlock.x-1)/dimBlock.x),((d3+dimBlock.y-1)/dimBlock.y));
 #pragma endregion
 
-#pragma region //create and allocate matrix M, N and P
-    //allocate dynamic matrix
-    double *M, *N, *P; //host matrix
-
-    //in standard memory we have to allocate CPU
-    M = (float*)malloc(size_M);
-    N = (float*)malloc(size_N);
-    P = (float*)malloc(size_P);
-
-    double *dev_M, *dev_N, *dev_P; //device matrix
-
-    cudaMalloc((void**)&dev_M, size_M);
-    cudaMalloc((void**)&dev_N, size_N);
-    cudaMalloc((void**)&dev_P, size_P);
-
-    cudaMemcpy(dev_M, M, size_M, cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_N, N, size_N, cudaMemcpyHostToDevice);
-    //cudaMemcpy(dev_P, P, size_P, cudaMemcpyHostToDevice); forse va chiamato cudamemcpy anche per P
+#pragma region //create and allocate matrix A, B and C
+    double* M; cudaMallocManaged(&M, size_M);
+    double* N; cudaMallocManaged(&N, size_N);
+    double* P; cudaMallocManaged(&P, size_P);
 #pragma endregion
 
 #pragma region //init all the matrix with a passed value
