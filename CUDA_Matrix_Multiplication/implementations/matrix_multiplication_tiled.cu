@@ -45,7 +45,7 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
      int Col = blockIdx.x * TILE + tc;
 
      float Pvalue = 0.0f;
-     for(int ph = 0; ph < d2/TILE; ++ph)
+     for(int ph = 0; ph < d3/TILE; ++ph)
      {
           if((Row < d1) && (ph * TILE + tc) < d2)
                Mds[tr][tc] = dev_M[Row * d2 + ph * TILE +tc];
