@@ -17,6 +17,7 @@ using namespace std;
 #define d1 2000
 #define d2 500
 #define d3 2000
+#define TILE 8
 
 __global__
 void matrixInit(float* A, float value, int raw, int col)
@@ -32,45 +33,44 @@ void matrixInit(float* A, float value, int raw, int col)
 }
 
 __global__
-void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned j, unsigned k, unsigned l, int tileSize)
+void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned d1, unsigned d2, unsigned d3)
 {
      
-     __shared__
-     float Mds[tileSize][tileSize];
-     __shared__
-     float Nds[tileSize][tileSize];
-     
+     __shared__ float Mds[TILE][TILE];
+     __shared__ float Nds[TILE][TILE];     
      
      int tc = threadIdx.x;
      int tr = threadIdx.y;
-     int Row = blockIdx.y * tileSize + tr;
-     int Col = blockIdx.x * tileSize + tc;
+     int Row = blockIdx.y * TILE + tr;
+     int Col = blockIdx.x * TILE + tc;
 
      float Pvalue = 0.0f;
-     for(int ph = 0; ph < k/tileSize; ++ph)
+     for(int ph = 0; ph < d2/TILE; ++ph)
      {
-          if((Row < j) && (ph * tileSize + tc) < k)
-               Mds[tr][tc] = dev_M[Row * k + ph * tileSize +tc];
+          if((Row < d1) && (ph * TILE + tc) < d2)
+               Mds[tr][tc] = dev_M[Row * d2 + ph * TILE +tc];
           else
-               Mds[tr][tc] = 0;
-          if((ph * tileSize +tr) < k && Col < l)
-               Nds[tr][tc] = dev_N[ph * tileSize + tc];
+               Mds[tr][tc] = 0.0f;
+          if((ph * TILE +tr) < d2 && Col < d3)
+               Nds[tr][tc] = dev_N[ph * TILE + tc];
           else
-               Nds[tr][tc] = 0;
+               Nds[tr][tc] = 0.f;
           __syncthreads();
-          for(int i = 0; i < tileSize; ++i)
+
+          for(int i = 0; i < TILE; ++i)
                Pvalue += Mds[tr][i] * Nds[i][tc];
+
           __syncthreads();
      }
-     if((Row < j) && (Col < l))
+     if((Row < d1) && (Col < d3))
           dev_P[Row * l + Col] = Pvalue;
 }
 
 int main(int argc, char* argv[])
 {
 #pragma region //managing argv && argc
-	int blockSize,
-	int tileSize;
+	int blockSize;
+
     if(argc != 2){
     	cout<<"no Block Size declared!"<<endl;
     	return 0;
@@ -82,9 +82,7 @@ int main(int argc, char* argv[])
     	cout<<"Invalid Block Size!"<<endl;
     	return 0;
     }
-    
-    tileSize = blockSize;
-    cout<<"TILE SIZE= "<<tileSize<<endl;
+#pragma endregion
 
 #pragma region //variables declaration
     float size_M = d1 * d2 * sizeof(float);
@@ -93,7 +91,6 @@ int main(int argc, char* argv[])
     cout<<"size of M: "<<size_M<<endl;
     cout<<"size of N: "<<size_N<<endl;
     cout<<"size of P: "<<size_P<<endl;
-    
     
     dim3 dimBlock(blockSize,blockSize);
         
@@ -107,23 +104,19 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //init all the matrix with a passed value
-   
-    
     matrixInit<<<dimGrid, dimBlock>>>(M,2.0f, d1, d2);
     matrixInit<<<dimGrid, dimBlock>>>(N,3.0f, d2, d1);
     matrixInit<<<dimGrid, dimBlock>>>(P,0.0f, d1, d3);
 #pragma endregion
 
 #pragma region //multiplication operation
-    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, d1, d2, d3, tileSize);
+    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, d1, d2, d3);
 
     cudaDeviceSynchronize();
 #pragma endregion
 
-
-cout<<"P[0] = "<<P[0]<<endl;
-
 #pragma region //check for errors (all values should be 3000.0f)
+    cout<<"P[0] = "<<P[0]<<endl;
     float maxError = 0;
     for (int i = 0; i < d1 * d3; i++)
 	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
