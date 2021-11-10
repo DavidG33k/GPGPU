@@ -33,7 +33,7 @@ void matrixInit(float* A, float value, int raw, int col)
 }
 
 __global__
-void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned d1, unsigned d2, unsigned d3)
+void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
 {
      
      __shared__ float Mds[TILE][TILE];
@@ -54,7 +54,8 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned d1, unsigned
           if((ph * TILE +tr) < d2 && Col < d3)
                Nds[tr][tc] = dev_N[ph * TILE + tc];
           else
-               Nds[tr][tc] = 0.f;
+               Nds[tr][tc] = 0.0f;
+
           __syncthreads();
 
           for(int i = 0; i < TILE; ++i)
@@ -63,12 +64,14 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned d1, unsigned
           __syncthreads();
      }
      if((Row < d1) && (Col < d3))
-          dev_P[Row * l + Col] = Pvalue;
+          dev_P[Row * d3 + Col] = Pvalue;
 }
 
 int main(int argc, char* argv[])
 {
+   
 #pragma region //managing argv && argc
+
 	int blockSize;
 
     if(argc != 2){
@@ -82,6 +85,7 @@ int main(int argc, char* argv[])
     	cout<<"Invalid Block Size!"<<endl;
     	return 0;
     }
+    
 #pragma endregion
 
 #pragma region //variables declaration
@@ -104,13 +108,13 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //init all the matrix with a passed value
-    matrixInit<<<dimGrid, dimBlock>>>(M,2.0f, d1, d2);
-    matrixInit<<<dimGrid, dimBlock>>>(N,3.0f, d2, d1);
-    matrixInit<<<dimGrid, dimBlock>>>(P,0.0f, d1, d3);
+    matrixInit<<<dimGrid, dimBlock>>>(M, 2.0f, d1, d2);
+    matrixInit<<<dimGrid, dimBlock>>>(N, 3.0f, d2, d1);
+    matrixInit<<<dimGrid, dimBlock>>>(P, 0.0f, d1, d3);
 #pragma endregion
 
 #pragma region //multiplication operation
-    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, d1, d2, d3);
+    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P);
 
     cudaDeviceSynchronize();
 #pragma endregion
