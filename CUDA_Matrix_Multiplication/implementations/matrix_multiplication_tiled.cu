@@ -11,14 +11,15 @@ GPGPU assignment 2: Matrix Multiplication in CUDA
 #include <algorithm>
 #include <iostream>
 #include <math.h>
+#include <stdlib.h>
 using namespace std;
 
-const int d1 = 2000;
-const int d2 = 500;
-const int d3 = 2000;
-const int TILE = 16;
+#define d1 2000
+#define d2 500
+#define d3 2000
+
 __global__
-void matrixInit(double* A, double value, int raw, int col)
+void matrixInit(float* A, float value, int raw, int col)
 {
   int index_x = blockIdx.x * blockDim.x + threadIdx.x;
   int index_y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -31,31 +32,33 @@ void matrixInit(double* A, double value, int raw, int col)
 }
 
 __global__
-void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned j, unsigned k, unsigned l)
+void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned j, unsigned k, unsigned l, int tileSize)
 {
+     
      __shared__
-     float Mds[TILE][TILE];
+     float Mds[tileSize][tileSize];
      __shared__
-     float Nds[TILE][TILE];
+     float Nds[tileSize][tileSize];
+     
      
      int tc = threadIdx.x;
      int tr = threadIdx.y;
-     int Row = blockIdx.y * TILE + tr;
-     int Col = blockIdx.x * TILE + tc;
+     int Row = blockIdx.y * tileSize + tr;
+     int Col = blockIdx.x * tileSize + tc;
 
-     Pvalue = 0;
-     for(int ph = 0; ph < k/TILE; ++ph)
+     float Pvalue = 0.0f;
+     for(int ph = 0; ph < k/tileSize; ++ph)
      {
-          if((Row < j) && (ph * TILE + tc) < k)
-               Mds[tr][tc] = dev_M[Row * k + ph * TILE +tc];
+          if((Row < j) && (ph * tileSize + tc) < k)
+               Mds[tr][tc] = dev_M[Row * k + ph * tileSize +tc];
           else
                Mds[tr][tc] = 0;
-          if((ph * TILE +tr) < k && Col < l)
-               Nds[tr][tc] = dev_N[ph * TILE + tc];
+          if((ph * tileSize +tr) < k && Col < l)
+               Nds[tr][tc] = dev_N[ph * tileSize + tc];
           else
                Nds[tr][tc] = 0;
           __syncthreads();
-          for(int i = 0; i < TILE; ++i)
+          for(int i = 0; i < tileSize; ++i)
                Pvalue += Mds[tr][i] * Nds[i][tc];
           __syncthreads();
      }
@@ -63,60 +66,74 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P, unsigned j, unsigned 
           dev_P[Row * l + Col] = Pvalue;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+#pragma region //managing argv && argc
+	int blockSize,
+	int tileSize;
+    if(argc != 2){
+    	cout<<"no Block Size declared!"<<endl;
+    	return 0;
+    }
+    
+    blockSize = atoi(argv[1]);
+    
+    if(blockSize!=8 && blockSize!=16 && blockSize!=32){
+    	cout<<"Invalid Block Size!"<<endl;
+    	return 0;
+    }
+    
+    tileSize = blockSize;
+    cout<<"TILE SIZE= "<<tileSize<<endl;
+
 #pragma region //variables declaration
     float size_M = d1 * d2 * sizeof(float);
     float size_N = d2 * d1 * sizeof(float);
-    float size_P = d3 * d3 * sizeof(float);
+    float size_P = d1 * d3 * sizeof(float);
     cout<<"size of M: "<<size_M<<endl;
     cout<<"size of N: "<<size_N<<endl;
     cout<<"size of P: "<<size_P<<endl;
     
-    dim3 dimBlock(32,32);
-    dim3 dimGrid_M(((d2+dimBlock.x-1)/dimBlock.x),((d1+dimBlock.y-1)/dimBlock.y));
-    dim3 dimGrid_N(((d1+dimBlock.x-1)/dimBlock.x),((d2+dimBlock.y-1)/dimBlock.y));
-    dim3 dimGrid_P(((d3+dimBlock.x-1)/dimBlock.x),((d3+dimBlock.y-1)/dimBlock.y));
+    
+    dim3 dimBlock(blockSize,blockSize);
+        
+    dim3 dimGrid(((d1+dimBlock.x-1)/dimBlock.x),((d3+dimBlock.y-1)/dimBlock.y));
 #pragma endregion
 
 #pragma region //create and allocate matrix A, B and C
-    double* M; cudaMallocManaged(&M, size_M);
-    double* N; cudaMallocManaged(&N, size_N);
-    double* P; cudaMallocManaged(&P, size_P);
+    float* M; cudaMallocManaged(&M, size_M);
+    float* N; cudaMallocManaged(&N, size_N);
+    float* P; cudaMallocManaged(&P, size_P);
 #pragma endregion
 
 #pragma region //init all the matrix with a passed value
-    matrixInit<<<dimGrid_M, dimBlock>>>(dev_M,2.0, d1, d2);
-    matrixInit<<<dimGrid_N, dimBlock>>>(dev_N,3.0, d2, d1);
-    matrixInit<<<dimGrid_P, dimBlock>>>(dev_P,0.0, d3, d3);
+   
+    
+    matrixInit<<<dimGrid, dimBlock>>>(M,2.0f, d1, d2);
+    matrixInit<<<dimGrid, dimBlock>>>(N,3.0f, d2, d1);
+    matrixInit<<<dimGrid, dimBlock>>>(P,0.0f, d1, d3);
 #pragma endregion
 
 #pragma region //multiplication operation
-    //matrixMulti<<<XXX, YYY>>>(dev_M, dev_N, dev_P, j, k, l); non è ancora chiaro come chiamare correttamente il metodo e cosa siano j, k, j.
+    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, d1, d2, d3, tileSize);
 
     cudaDeviceSynchronize();
-
-    //cudaMemcpy(P, dev_P, size_P, cudaMemcpyDeviceToHost); probabilmetne metodo inutile
 #pragma endregion
 
-#pragma region //check for errors (all values should be 3.0f)
-    float maxError = 0;
-    for (int i = 0; i < M * N; i++)
-	    maxError=fmax(maxError, fabs(C[i]-3.0f));
-    cout << "Max error: " << maxError << endl;
-#pragma endregion
 
-#pragma region //check for errors (all values should be 3.0f)
+cout<<"P[0] = "<<P[0]<<endl;
+
+#pragma region //check for errors (all values should be 3000.0f)
     float maxError = 0;
-    for (int i = 0; i < M * N; i++)
-	    maxError=fmax(maxError, fabs(C[i]-12000.0f));
+    for (int i = 0; i < d1 * d3; i++)
+	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
     cout << "Max error: " << maxError << endl;
 #pragma endregion
 
 #pragma region //free cuda memory
-    cudaFree(dev_M); 
-    cudaFree(dev_N); 
-    cudaFree(dev_P);
+    cudaFree(M); 
+    cudaFree(N); 
+    cudaFree(P);
 #pragma region
 
     return 0;
