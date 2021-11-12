@@ -41,21 +41,25 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
      
      int tc = threadIdx.x;
      int tr = threadIdx.y;
-     int Row = blockIdx.y * TILE + tr;
-     int Col = blockIdx.x * TILE + tc;
+     int Row = blockIdx.y * TILE + threadIdx.y;
+     int Col = blockIdx.x * TILE + threadIdx.x;
+     int stride_c = TILE * gridDim.x;
+     int stride_r = TILE * gridDim.y;
 
      float Pvalue = 0.0f;
-     for(int ph = 0; ph < d3/TILE; ++ph)
-     {
-          if((Row < d1) && (ph * TILE + tc) < d2)
-               Mds[tr][tc] = dev_M[Row * d2 + ph * TILE +tc];
-          else
-               Mds[tr][tc] = 0.0f;
-          if((ph * TILE +tr) < d2 && Col < d3)
-               Nds[tr][tc] = dev_N[ph * TILE + tc];
-          else
-               Nds[tr][tc] = 0.0f;
 
+     for(int ph = 0; ph < d2/TILE; ++ph)
+     {
+        for (int j = Row; j < d1; j += stride_r)
+            for (int i = (ph * TILE + tc); i < d2; i += stride_c)
+             {
+                    Mds[tr][tc] = dev_M[Row * d2 + i];
+             }
+        for (int j = (ph * TILE + tr); j < d2; j += stride_r)
+            for (int i = Col; i < d3; i += stride_c)
+            { 
+                    Nds[tr][tc] = dev_N[j * d3 + Col];
+            }
           __syncthreads();
 
           for(int i = 0; i < TILE; ++i)
@@ -63,8 +67,11 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
 
           __syncthreads();
      }
-     if((Row < d1) && (Col < d3))
-          dev_P[Row * d3 + Col] = Pvalue;
+     
+     for (int j = Row; j < d1; j += stride_r)
+            for (int i = Col; i < d3; i += stride_c) {
+                dev_P[Row * d3 + Col] = Pvalue;
+            }
 }
 
 int main(int argc, char* argv[])
