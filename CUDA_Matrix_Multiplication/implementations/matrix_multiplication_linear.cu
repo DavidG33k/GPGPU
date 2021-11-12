@@ -28,14 +28,20 @@ __global__ void matrixMulti(float* M, float* N, float* P) {
     int Row = blockIdx.y*blockDim.y+threadIdx.y;
     // Calculate the column index of P and N
     int Col = blockIdx.x*blockDim.x+threadIdx.x;
-    if ((Row < d1) && (Col < d3)) {
-        float Pvalue = 0;
-    // each thread computes one element of the block sub-matrix
-    for (int k = 0; k < d2; ++k) {
-    Pvalue += M[Row*d2+k]*N[k*d2+Col];
-    }
-    P[Row*d1+Col] = Pvalue;
-    }
+
+    int stride_x = blockDim.x * gridDim.x;
+    int stride_y = blockDim.y * gridDim.y;
+
+    for (int i = Row; i < d1; i += stride_x)
+        for (int j = Col; j < d3; j += stride_y){
+
+            float Pvalue = 0;
+        // each thread computes one element of the block sub-matrix
+            for (int k = 0; k < d2; ++k) {
+                Pvalue += M[i*d2+k]*N[k*d2+j];
+            }
+            P[i*d1+j] = Pvalue;
+        }
 }
 
 
