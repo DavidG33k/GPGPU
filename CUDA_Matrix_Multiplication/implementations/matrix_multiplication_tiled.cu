@@ -48,30 +48,31 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
 
      float Pvalue = 0.0f;
 
-     for(int ph = 0; ph < d2/TILE; ++ph)
+     for(int ph = 0; ph < (max(d1, d2)/TILE); ++ph)
      {
         for (int j = Row; j < d1; j += stride_r)
             for (int i = (ph * TILE + tc); i < d2; i += stride_c)
              {
-                    Mds[tr][tc] = dev_M[Row * d2 + i];
+                    Mds[tr][tc] = dev_M[j * d2 + i];
              }
         for (int j = (ph * TILE + tr); j < d2; j += stride_r)
             for (int i = Col; i < d3; i += stride_c)
             { 
-                    Nds[tr][tc] = dev_N[j * d3 + Col];
+                    Nds[tr][tc] = dev_N[j * d3 + i];
             }
-          __syncthreads();
+            
+        __syncthreads();
 
-          for(int i = 0; i < TILE; ++i)
-               Pvalue += Mds[tr][i] * Nds[i][tc];
+        for(int i = 0; i < TILE; ++i)
+            Pvalue += Mds[tr][i] * Nds[i][tc];
 
-          __syncthreads();
+        __syncthreads();
      }
      
      for (int j = Row; j < d1; j += stride_r)
-            for (int i = Col; i < d3; i += stride_c) {
-                dev_P[Row * d3 + Col] = Pvalue;
-            }
+            for (int i = Col; i < d3; i += stride_c)
+                dev_P[i * d3 + j] = Pvalue;
+            
 }
 
 int main(int argc, char* argv[])
@@ -127,7 +128,12 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //check for errors (all values should be 3000.0f)
+    cout<<"M[0] = "<<M[0]<<endl;
+    cout<<"M[last_position] = "<<M[d1*d2-1]<<endl;
+    cout<<"N[0] = "<<N[0]<<endl;
+    cout<<"N[last_position] = "<<N[d2*d3-1]<<endl;
     cout<<"P[0] = "<<P[0]<<endl;
+    cout<<"P[last_position] = "<<P[d1*d3-1]<<endl;
     float maxError = 0;
     for (int i = 0; i < d1 * d3; i++)
 	    maxError=fmax(maxError, fabs(P[i]-3000.0f));

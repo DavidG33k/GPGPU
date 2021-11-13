@@ -46,7 +46,7 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
 
      float Pvalue = 0.0f;
 
-     for(int ph = 0; ph < d2/TILE; ++ph)
+     for(int ph = 0; ph < max(d1, d2)/TILE; ++ph)
      {
         if(Row < d1 && ((ph * TILE + tc)) < d2)
             Mds[tr][tc] = dev_M[Row * d2 + (ph * TILE + tc)];
@@ -65,7 +65,7 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
      }
      
      if(Row < d1 && Col < d3)
-        dev_P[Row * d3 + Col] = Pvalue;
+        dev_P[Col * d3 + Row] = Pvalue;
 }
 
 int main(int argc, char* argv[])
@@ -121,7 +121,12 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //check for errors (all values should be 3000.0f)
+    cout<<"M[0] = "<<M[0]<<endl;
+    cout<<"M[last_position] = "<<M[d1*d2-1]<<endl;
+    cout<<"N[0] = "<<N[0]<<endl;
+    cout<<"N[last_position] = "<<N[d2*d3-1]<<endl;
     cout<<"P[0] = "<<P[0]<<endl;
+    cout<<"P[last_position] = "<<P[d1*d3-1]<<endl;
     float maxError = 0;
     for (int i = 0; i < d1 * d3; i++)
 	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
