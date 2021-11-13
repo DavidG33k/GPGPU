@@ -33,7 +33,7 @@ void matrixInit(float* A, float value, int raw, int col)
 }
 
 __global__
-void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
+void matrixMulti(float* dev_M, float* dev_N, float* dev_P, int MAX)
 {
      
      __shared__ float Mds[TILE][TILE];
@@ -48,17 +48,22 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
 
      float Pvalue = 0.0f;
 
-     for(int ph = 0; ph < (max(d1, d2)/TILE); ++ph)
+     for(int ph = 0; ph < MAX/TILE; ++ph)
      {
+
+        Mds[tr][tc] = 0;
+        Nds[tr][tc] = 0;
+
         for (int j = Row; j < d1; j += stride_r)
             for (int i = (ph * TILE + tc); i < d2; i += stride_c)
              {
-                    Mds[tr][tc] = dev_M[j * d2 + i];
+                Mds[tr][tc] = dev_M[j * d2 + i];
              }
+
         for (int j = (ph * TILE + tr); j < d2; j += stride_r)
             for (int i = Col; i < d3; i += stride_c)
             { 
-                    Nds[tr][tc] = dev_N[j * d3 + i];
+                Nds[tr][tc] = dev_N[j * d3 + i];
             }
             
         __syncthreads();
@@ -122,7 +127,7 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //multiplication operation
-    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P);
+    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, max({d1, d2, d3}));
 
     cudaDeviceSynchronize();
 #pragma endregion

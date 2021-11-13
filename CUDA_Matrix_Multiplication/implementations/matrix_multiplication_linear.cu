@@ -3,9 +3,9 @@
 #include <math.h>
 using namespace std;
 
-#define d1 500
-#define d2 2000
-#define d3 500
+#define d1 2000
+#define d2 500
+#define d3 2000
 
 
 
