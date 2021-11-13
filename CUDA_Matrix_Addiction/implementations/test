@@ -1,0 +1,37 @@
+//mono
+__global__
+void matrixAdd(double* A, double* B, double* C)
+{
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int index = col + row * N;
+
+    if (col < N && row < M) {
+        C[index] = A[index] + B[index];
+    }
+}
+
+//gride stride
+__global__
+void matrixAdd(double *A, double *B, double *C)
+{
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
+  int stride_x = blockDim.x * gridDim.x;
+  int stride_y = blockDim.y * gridDim.y;
+
+  for (int i = col; i < M; i += stride_x)
+    for (int j = row; j < N; j += stride_y)
+    {
+        int index=j*M+i;
+        C[index] = A[index] + B[index];
+    }
+  
+}
+
+//nel nostro caso
+1. ROW = blockIdx.y * TILE + threadIdx.y; -- //avere stride_r
+2. COL = blockIdx.x * TILE + threadIdx.x; -- //avere stride_c
+3. stride_r = ???
+4. stride_c = ???
