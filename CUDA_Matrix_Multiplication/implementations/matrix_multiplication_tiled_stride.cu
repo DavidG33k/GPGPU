@@ -3,15 +3,16 @@ GPGPU assignment 2: Matrix Multiplication in CUDA
     @file matrix_multiplication_serial.cpp
     @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
     @version 03 November 2021 
-*A serial implementation of the matrix multiplication algorithm in C/C++.
+*A tiled implementation of the matrix multiplication algorithm in CUDA
+    using the Unified Memory and the Grid-Stride Loop models.
  - dims of M = 2000x500
  - dims of N = 500x2000
 */
 
-#include <algorithm>
-#include <iostream>
-#include <math.h>
-#include <stdlib.h>
+#include<algorithm>
+#include<iostream>
+#include<math.h>
+#include<stdlib.h>
 using namespace std;
 
 #define d1 2000
@@ -24,6 +25,7 @@ void matrixInit(float* A, float value, int raw, int col)
 {
   int index_x = blockIdx.x * blockDim.x + threadIdx.x;
   int index_y = blockIdx.y * blockDim.y + threadIdx.y;
+
   int stride_x = blockDim.x * gridDim.x;
   int stride_y = blockDim.y * gridDim.y;
 
@@ -43,6 +45,7 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P, int MAX)
      int tr = threadIdx.y;
      int Row = blockIdx.y * TILE + threadIdx.y;
      int Col = blockIdx.x * TILE + threadIdx.x;
+
      int stride_c = TILE * gridDim.x;
      int stride_r = TILE * gridDim.y;
 
@@ -83,7 +86,8 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P, int MAX)
 int main(int argc, char* argv[])
 {
    
-#pragma region //managing argv && argc
+#pragma region //managing argv & argc & time
+    clock_t start, end;
 
 	int blockSize;
 
@@ -102,16 +106,15 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //variables declaration
+    start=clock();
+
     float size_M = d1 * d2 * sizeof(float);
     float size_N = d2 * d1 * sizeof(float);
     float size_P = d1 * d3 * sizeof(float);
-    cout<<"size of M: "<<size_M<<endl;
-    cout<<"size of N: "<<size_N<<endl;
-    cout<<"size of P: "<<size_P<<endl;
     
     dim3 dimBlock(blockSize,blockSize);
         
-    dim3 dimGrid(((d1+dimBlock.x-1)/dimBlock.x),((d3+dimBlock.y-1)/dimBlock.y));
+    dim3 dimGrid((d3-1)/(dimBlock.x + 1),(d1-1)/(dimBlock.y + 1));
 #pragma endregion
 
 #pragma region //create and allocate matrix A, B and C
@@ -127,7 +130,7 @@ int main(int argc, char* argv[])
 #pragma endregion
 
 #pragma region //multiplication operation
-    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, max({d1, d2, d3}));
+    matrixMulti<<<dimGrid, dimBlock>>>(M, N, P, d2);//max({d1, d2, d3}));
 
     cudaDeviceSynchronize();
 #pragma endregion
@@ -139,6 +142,7 @@ int main(int argc, char* argv[])
     cout<<"N[last_position] = "<<N[d2*d3-1]<<endl;
     cout<<"P[0] = "<<P[0]<<endl;
     cout<<"P[last_position] = "<<P[d1*d3-1]<<endl;
+
     float maxError = 0;
     for (int i = 0; i < d1 * d3; i++)
 	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
@@ -149,7 +153,10 @@ int main(int argc, char* argv[])
     cudaFree(M); 
     cudaFree(N); 
     cudaFree(P);
-#pragma region
 
+#pragma region
+    end=clock();
+    cout << "Exe time: "<<(((double)(end-start))/CLOCKS_PER_SEC)<<" sec"<<endl;
+    
     return 0;
 }

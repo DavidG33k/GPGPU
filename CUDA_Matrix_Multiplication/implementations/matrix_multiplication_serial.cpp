@@ -7,15 +7,16 @@ GPGPU assignment 2: Matrix Multiplication in CUDA
  - dims of M = 2000x500
  - dims of N = 500x2000
 */
+
 #include<iostream>
 #include<math.h>
 #include<time.h>
 using namespace std;
 
-const int dim = 2000*500;
-const int d1 = 2000;
-const int d2 = 500;
-const int d3 = 2000;
+#define d1 2000
+#define d2 500
+#define d3 2000
+#define dim 2000*500
 
 void matrixInit(float** A, int m, int n, float value)
 {
@@ -39,6 +40,8 @@ void matrixMulti(float** M, float** N, float** P)
 int main()
 {
 #pragma region //create and allocate matrix M, N and P
+    clock_t start_tot, end_tot;
+
     float **M, **N, **P;
 
     M = (float**)malloc(d1*sizeof(float));
@@ -55,28 +58,27 @@ int main()
 
     //tracking the time
     clock_t start, end;
+    start_tot=clock();
 #pragma endregion
 
 #pragma region //init all the matrix with a passed value
+    start=clock();
     matrixInit(M,d1,d2,2.0f);
     matrixInit(N,d2,d1,3.0f);
     matrixInit(P,d1,d1,0.0f);
+    end=clock();
+    cout << "Init time*3: "<<(((double)(end-start))/CLOCKS_PER_SEC)<<" sec"<<endl;
 #pragma endregion
 
-#pragma region //addiction operation and print results
-    //tracking addiction time
-    cout<<endl<<"pre multi"<<endl;
+#pragma region //Multiplication operation and print results
+    //tracking Multiplication time
     start=clock();
     matrixMulti(M,N,P);
     end=clock();
-    cout<<endl<<"post multi"<<endl;
 
     cout.precision(100);
     cout << "Multiplication time: "<<(((double)(end-start))/CLOCKS_PER_SEC)<<" sec"<<endl;
 
-    //printing resulting matrix C and resulting time
-    cout<<endl<<"PRINT C final"<<endl;
-    //printMatrix(C);
 #pragma endregion
 
 #pragma region //check for errors (all values should be 3000f)
@@ -89,10 +91,13 @@ int main()
 #pragma endregion
 
 #pragma region //delete matrix
-free(M);
-free(N);
-free(P);
+    free(M);
+    free(N);
+    free(P);
 #pragma endregion
-    
+
+    end_tot=clock();
+    cout << "Exe time: "<<(((double)(end_tot-start_tot))/CLOCKS_PER_SEC)<<" sec"<<endl;
+
     return 0;
 }
