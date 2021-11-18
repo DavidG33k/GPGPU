@@ -43,35 +43,26 @@ __global__ void matrixMulTiledGrid(float* M, float* N, float* P, int rows_M, int
     __shared__ float Ms[TILE][TILE];
     __shared__ float Ns[TILE][TILE];
     
-
-    for(int i = row; i < rows_M; i+=stride_i)
+    for (int ph = 0; ph < (TILE + cols_M - 1)/TILE; ph++)
     {
-        for(int j = col; j < cols_N; j+= stride_j)
-        {
-            for (int ph = 0; ph < (TILE + cols_M - 1)/TILE; ph++)
-            {
+        Ms[threadIdx.y][threadIdx.x] = 0.0;
+        Ns[threadIdx.y][threadIdx.x] = 0.0;
 
-                if (ph*TILE + threadIdx.x < cols_M && i < rows_M)
-                   Ms[threadIdx.y][threadIdx.x] = M[i*cols_M + ph*TILE + threadIdx.x]; //coalesced
-                else
-                   Ms[threadIdx.y][threadIdx.x] = 0.0;
-       
-                if (ph*TILE + threadIdx.y < rows_N && j < cols_N)
-                    Ns[threadIdx.y][threadIdx.x] = N[(ph*TILE + threadIdx.y)*cols_N + j]; //coalesced
-                else
-                    Ns[threadIdx.y][threadIdx.x] = 0.0;
-       
-                __syncthreads();
-       
-                for (int n = 0; n < TILE; n++)
-                   pValue += Ms[threadIdx.y][n] * Ns[n][threadIdx.x];
-       
-                __syncthreads();
-           }
-           
-           P[((blockIdx.y * blockDim.y + threadIdx.y)*cols_P) + (blockIdx.x * blockDim.x)+ threadIdx.x] = pValue;
-        }
-    } 
+        for(int i = row; i < rows_M && ph*TILE + threadIdx.x < cols_M; i+=stride_i)
+            Ms[threadIdx.y][threadIdx.x] = M[i*cols_M + ph*TILE + threadIdx.x]; //coalesced
+        
+        for(int j = col; j < cols_N && ph*TILE + threadIdx.y < rows_N; j+= stride_j)            
+            Ns[threadIdx.y][threadIdx.x] = N[(ph*TILE + threadIdx.y)*cols_N + j]; //coalesced
+
+        __syncthreads();
+
+        for (int n = 0; n < TILE; n++)
+        pValue += Ms[threadIdx.y][n] * Ns[n][threadIdx.x];
+
+        __syncthreads();
+    }
+    P[((blockIdx.y * blockDim.y + threadIdx.y)*cols_P) + (blockIdx.x * blockDim.x)+ threadIdx.x] = pValue;
+            
 }
 
 

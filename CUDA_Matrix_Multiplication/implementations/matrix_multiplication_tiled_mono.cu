@@ -20,16 +20,16 @@ using namespace std;
 #define TILE 8
 
 __global__
-void matrixInit(float* A, float value, int raw, int col)
+void matrixInit(float* A, float value, int row, int col)
 {
   int index_x = blockIdx.x * blockDim.x + threadIdx.x;
   int index_y = blockIdx.y * blockDim.y + threadIdx.y;
   int stride_x = blockDim.x * gridDim.x;
   int stride_y = blockDim.y * gridDim.y;
 
-  for (int i = index_x; i < raw; i += stride_x)
+  for (int i = index_x; i < row; i += stride_x)
     for (int j = index_y; j < col; j += stride_y)
-        A[j*raw+i]=value;
+        A[j*row+i]=value;
 }
 
 __global__
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 	int blockSize;
 
     if(argc != 2){
-    	cout<<"no Block Size declared!"<<endl;
+    	cout<<"No Block Size Declared!"<<endl;
     	return 0;
     }
     

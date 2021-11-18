@@ -21,7 +21,7 @@ using namespace std;
 #define TILE 8
 
 __global__
-void matrixInit(float* A, float value, int raw, int col)
+void matrixInit(float* A, float value, int row, int col)
 {
   int index_x = blockIdx.x * blockDim.x + threadIdx.x;
   int index_y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -29,9 +29,9 @@ void matrixInit(float* A, float value, int raw, int col)
   int stride_x = blockDim.x * gridDim.x;
   int stride_y = blockDim.y * gridDim.y;
 
-  for (int i = index_x; i < raw; i += stride_x)
+  for (int i = index_x; i < row; i += stride_x)
     for (int j = index_y; j < col; j += stride_y)
-        A[j*raw+i]=value;
+        A[j*row+i]=value;
 } 
 
 __global__
@@ -46,8 +46,8 @@ void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
      int Row = blockIdx.y * TILE + threadIdx.y;
      int Col = blockIdx.x * TILE + threadIdx.x;
 
-     int stride_c = blockDim.x * gridDim.x;
-     int stride_r = blockDim.y * gridDim.y;
+     int stride_c = TILE * gridDim.x;
+     int stride_r = TILE * gridDim.y;
 
      float Pvalue = 0.0f;
 
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 	int blockSize;
 
     if(argc != 2){
-    	cout<<"no Block Size declared!"<<endl;
+    	cout<<"No Block Size Declared!"<<endl;
     	return 0;
     }
     
