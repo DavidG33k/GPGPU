@@ -1,58 +1,82 @@
-#include<algorithm>
+/**
+GPGPU assignment 2: Matrix Multiplication in CUDA
+    @file matrix_multiplication_serial.cpp
+    @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
+    @version 03 November 2021 
+A straightforward implementation of the matrix multiplication algorithm in CUDA using the Unified Memory and the Monolithic models.
+ - dims of M = 2000x500
+ - dims of N = 500x2000
+*/
+
 #include<iostream>
 #include<math.h>
 #include<time.h>
+#include<assert.h>
 using namespace std;
 
-#define d1 500
-#define d2 2000
-#define d3 500
+#define rowsM 2000
+#define colsM 500
+#define rowsN 500
+#define colsN 2000
 
-__global__
-void matrixInit(float* A, float value, int row, int col)
+__global__ void matrixInit(float* A, float value, int row, int col)
 {
-  int index_x = blockIdx.x * blockDim.x + threadIdx.x;
-  int index_y = blockIdx.y * blockDim.y + threadIdx.y;
+  int index_i = blockIdx.x * blockDim.x + threadIdx.x;
+  int index_j = blockIdx.y * blockDim.y + threadIdx.y;
+  int stride_i = blockDim.x * gridDim.x;
+  int stride_j = blockDim.y * gridDim.y;
 
-  int stride_x = blockDim.x * gridDim.x;
-  int stride_y = blockDim.y * gridDim.y;
-
-  for (int i = index_x; i < row; i += stride_x)
-    for (int j = index_y; j < col; j += stride_y)
+  for (int i = index_i; i < row; i += stride_i)
+    for (int j = index_j; j < col; j += stride_j)
         A[j*row+i]=value;
 }
 
 
 __global__ void matrixMulti(float* M, float* N, float* P)
 {
-    // Calculate the row index of the P element and M
-    int Row = blockIdx.y*blockDim.y + threadIdx.y;
+    int tc = threadIdx.x;
+    int tr = threadIdx.y;
+    
     // Calculate the column index of P and N
-    int Col = blockIdx.x*blockDim.x + threadIdx.x;
+    int col = blockIdx.x*blockDim.x + tc;
+    // Calculate the row index of the P element and M
+    int row = blockIdx.y*blockDim.y + tr;
+    
+    int stride_i = blockDim.y * gridDim.y;       //equivalent to int stride_i = blockDim.y * gridDim.y;
+    int stride_j = blockDim.x * gridDim.x;       //equivalent to int stride_j = blockDim.x * gridDim.x;
 
-    // if(Row<d1 && Col<d3)
-    // {
-    //     float pValue=0;
-    //     for(int k=0; k<d2; ++k)
-    //         pValue += M[Row*d2 + k] * N[k*d2 + Col]; 
-    //     P[Row*d1 + Col] = pValue;
-    // }
-
-    int stride_i = blockDim.y * gridDim.y;
-    int stride_j = blockDim.x * gridDim.x;
-
-    for (int i = Row; i < d1; i += stride_i)
+    for (int i = row; i < rowsM; i += stride_i)
     {
-        for (int j = Col; j < d3; j += stride_j)
+        for (int j = col; j < colsN; j += stride_j)
         {
-            float pValue = 0;
+            float pValue = 0.0f;
 
             // each thread computes one element of the block sub-matrix
-            for (int k = 0; k < d2; ++k) {
-                pValue += M[i*d2+k] * N[k*d2+j];
-            }
-            P[i*d1+j] = pValue;
+            for (int k = 0; k < colsM; ++k)         
+                pValue += M[i*colsM+k] * N[k*colsN+j];
+            
+            P[i*colsN+j] = pValue;
         }
+    }
+
+}
+
+__global__ void matrixMultiMono(float* M, float* N, float* P)
+{
+    int tc = threadIdx.x;
+    int tr = threadIdx.y;
+    
+    // Calculate the column index of P and N
+    int col = blockIdx.x*blockDim.x + tc;
+    // Calculate the row index of the P element and M
+    int row = blockIdx.y*blockDim.y + tr;
+
+    if( row < rowsM && col < colsN)
+    {
+        float pValue=0.0f;
+        for(int k=0; k < colsM; ++k)    //rowsN is the same
+            pValue += M[row*colsM + k] * N[k*colsN + col];
+        P[row*colsN + col] = pValue;
     }
 }
 
@@ -60,84 +84,78 @@ __global__ void matrixMulti(float* M, float* N, float* P)
 int main(int argc, char* argv[])
 {
    
-#pragma region //managing argv && argc && time
+#pragma region  //managing argv, argc, time
     clock_t start, end;
 
-	int blockSize;
+    int blockSize;
 
-    if(argc != 2){
-    	cout<<"No Block Size Declared!"<<endl;
-    	return 0;
-    }
-    
+    //colsM have to be equal to rowsN so you can do matrix multi
+    assert(colsM == rowsN);
+    assert(argc == 2);
+
     blockSize = atoi(argv[1]);
-    
-    if(blockSize!=8 && blockSize!=16 && blockSize!=32){
-    	cout<<"Invalid Block Size!"<<endl;
-    	return 0;
-    }
-    
+
+    assert(blockSize==8 || blockSize==16 || blockSize==32);    
 #pragma endregion
 
 #pragma region //variables declaration
     start=clock();
-    float size_M = d1 * d2 * sizeof(float);
-    float size_N = d2 * d1 * sizeof(float);
-    float size_P = d1 * d3 * sizeof(float);
+    float sizeM = rowsM * colsM * sizeof(float);
+    float sizeN = rowsN * colsN * sizeof(float);
+    float sizeP = rowsM * colsN * sizeof(float);
     
     dim3 dimBlock(blockSize,blockSize);
         
-    dim3 dimGridM(ceil(d2/dimBlock.x), ceil(d1/dimBlock.y));  //d1*d2 500x2000
-    dim3 dimGridN(ceil(d3/dimBlock.x), ceil(d2/dimBlock.y));  //d2*d3 2000x500
-    dim3 dimGridP(ceil(d3/dimBlock.x), ceil(d1/dimBlock.y));  //ceil works for float numbers
+    dim3 dimGridM(ceil(colsM/dimBlock.x), ceil(rowsM/dimBlock.y));  //rowsM*colsM 500x2000
+    dim3 dimGridN(ceil(colsN/dimBlock.x), ceil(rowsN/dimBlock.y));  //rowsN*colsN 2000x500
+    dim3 dimGridP(ceil(colsN/dimBlock.x), ceil(rowsM/dimBlock.y));  //ceil works for float numbers
 #pragma endregion
 
-#pragma region //create and allocate matrix A, B and C
-    float* M; cudaMallocManaged(&M, size_M);
-    float* N; cudaMallocManaged(&N, size_N);
-    float* P; cudaMallocManaged(&P, size_P);
-#pragma endregion
+#pragma region //inizialize matrices M, N and P
+    //unified memory allocation
+    float* M; cudaMallocManaged(&M, sizeM);
+    float* N; cudaMallocManaged(&N, sizeN);
+    float* P; cudaMallocManaged(&P, sizeP);
 
-#pragma region //init all the matrix with a passed value
-    matrixInit<<<dimGridM, dimBlock>>>(M, 2.0f, d1, d2);
-    matrixInit<<<dimGridN, dimBlock>>>(N, 3.0f, d2, d3);
-    matrixInit<<<dimGridP, dimBlock>>>(P, 0.0f, d1, d3);
-    
+    //init kernel
+    matrixInit<<<dimGridM, dimBlock>>>(M, 2.0f, rowsM, colsM);
+    matrixInit<<<dimGridN, dimBlock>>>(N, 3.0f, rowsN, colsN);
+    matrixInit<<<dimGridP, dimBlock>>>(P, 0.0f, rowsM, colsN);
     cudaDeviceSynchronize();
 #pragma endregion
-
-cout<<"m[0] = "<<M[0]<<endl;
-cout<<"n[0] = "<<N[0]<<endl;
 
 #pragma region //multiplication operation
+
     matrixMulti<<<dimGridP, dimBlock>>>(M, N, P);
+    //matrixMultiMono<<<dimGridP, dimBlock>>>(M, N, P);
 
     cudaDeviceSynchronize();
 #pragma endregion
 
-#pragma region //check for errors (all values should be 3000.0f)
-    cout<<"M[0] = "<<M[0]<<endl;
-    cout<<"M[last_position] = "<<M[(int)(d1*d2-1)]<<endl;
-    cout<<"N[0] = "<<N[0]<<endl;
-    cout<<"N[last_position] = "<<N[(int)(d2*d3-1)]<<endl;
+#pragma region  //checking errors
+
+    //in this example i expect that all the elements are equal to eValue
+    float eValue=3000.0f;
+
     cout<<"P[0] = "<<P[0]<<endl;
-    cout<<"P[last_position] = "<<P[(int)(d1*d3-1)]<<endl;
+    cout<<"P[last] = "<<P[rowsM*colsN-1]<<endl;
 
     int cont=0;
-    for (int i = 0; i < d1 * d3; i++)
+    for (int i = 0; i < rowsM * colsN; ++i)
     {
-        if(P[i]!=3000.0f)
+        if(P[i]!=eValue)
             cont++;
     }
-    cout<<"elementi mancanti: "<<cont<<endl;
+    cout<<"Missing elements: "<<cont<<endl;
 
     float maxError = 0;
-    for (int i = 0; i < d1 * d3; i++)
-	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
+    for (int i = 0; i < rowsM * colsN; ++i)
+	    maxError=fmax(maxError, fabs(P[i]-eValue));
     cout << "Max error: " << maxError << endl;
+
 #pragma endregion
 
-#pragma region //free cuda memory
+#pragma region //free cuda memory and printing execution time
     cudaFree(M); 
     cudaFree(N); 
     cudaFree(P);
