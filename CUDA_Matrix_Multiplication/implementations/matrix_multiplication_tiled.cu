@@ -3,8 +3,7 @@ GPGPU assignment 2: Matrix Multiplication in CUDA
     @file matrix_multiplication_serial.cpp
     @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
     @version 03 November 2021 
-*A tiled implementation of the matrix multiplication algorithm in CUDA
-    using the Unified Memory and the Grid-Stride Loop models.
+A tiled implementation of the matrix multiplication algorithm in CUDA using the Unified Memory and the Grid-Stride Loop models.
  - dims of M = 2000x500
  - dims of N = 500x2000
 */

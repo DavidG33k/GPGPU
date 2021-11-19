@@ -3,114 +3,111 @@ GPGPU assignment 2: Matrix Multiplication in CUDA
     @file matrix_multiplication_serial.cpp
     @author Canonaco Martina @author Gena Davide @author Morello Michele @author Oliviero Tiziana
     @version 03 November 2021 
-*A serial implementation of the matrix multiplication algorithm in C/C++.
+A tiled implementation of the matrix multiplication algorithm in CUDA using the Unified Memory and the Monolithic models.
  - dims of M = 2000x500
  - dims of N = 500x2000
 */
 
-#include <algorithm>
-#include <iostream>
-#include <math.h>
-#include <stdlib.h>
+#include<iostream>
+#include<math.h>
+#include<stdlib.h>
+#include<time.h>
+#include<assert.h>
 using namespace std;
 
-#define d1 2000
-#define d2 500
-#define d3 2000
-#define TILE 8
+#define rowsM 2000  //corrisponding to rowsP
+#define colsM 500
+#define rowsN 500
+#define colsN 2000  //corrisponding to colsP
+#define TILE 8  //equal to blockSize 8x8, 16x16, 32x32
 
-__global__
-void matrixInit(float* A, float value, int row, int col)
+__global__ void matrixInit(float* A, float value, int row, int col)
 {
-  int index_x = blockIdx.x * blockDim.x + threadIdx.x;
-  int index_y = blockIdx.y * blockDim.y + threadIdx.y;
-  int stride_x = blockDim.x * gridDim.x;
-  int stride_y = blockDim.y * gridDim.y;
+  int index_i = blockIdx.x * blockDim.x + threadIdx.x;
+  int index_j = blockIdx.y * blockDim.y + threadIdx.y;
+  int stride_i = blockDim.x * gridDim.x;
+  int stride_j = blockDim.y * gridDim.y;
 
-  for (int i = index_x; i < row; i += stride_x)
-    for (int j = index_y; j < col; j += stride_y)
+  for (int i = index_i; i < row; i += stride_i)
+    for (int j = index_j; j < col; j += stride_j)
         A[j*row+i]=value;
 }
 
-__global__
-void matrixMulti(float* dev_M, float* dev_N, float* dev_P)
+__global__ void matrixMulti(float* M, float* N, float* P)
 {
-     
-     __shared__ float Mds[TILE][TILE];
-     __shared__ float Nds[TILE][TILE];     
-     
-     int tc = threadIdx.x;
-     int tr = threadIdx.y;
-     int Row = blockIdx.y * TILE + tr;
-     int Col = blockIdx.x * TILE + tc;
+    //create variables
+    int tc = threadIdx.x;
+    int tr = threadIdx.y;
+    int row = blockIdx.y * TILE + tr;
+    int col = blockIdx.x * TILE + tc;
 
-     float Pvalue = 0.0f;
+    float pValue = 0.0f;
 
-     for(int ph = 0; ph < (TILE + d2 - 1)/TILE; ++ph)
-     {
-        if(Row < d1 && ((ph * TILE + tc)) < d2)
-            Mds[tr][tc] = dev_M[Row * d2 + (ph * TILE + tc)];
+    //alloc shared memory     
+    __shared__ float Mds[TILE][TILE];
+    __shared__ float Nds[TILE][TILE]; 
+
+    for(int ph = 0; ph < (TILE + colsM - 1)/TILE; ++ph)
+    {
+        if(row < rowsM && ((ph * TILE + tc)) < colsM)
+            Mds[tr][tc] = M[row * colsM + (ph * TILE + tc)];
         else Mds[tr][tc] = 0;
 
-        if((ph * TILE + tr) < d2 && Col < d3)
-            Nds[tr][tc] = dev_N[(ph * TILE + tr) * d3 + Col];
+        if((ph * TILE + tr) < colsM && col < colsN)
+            Nds[tr][tc] = N[(ph * TILE + tr) * colsN + col];
         else Nds[tr][tc] = 0;
             
-          __syncthreads();
+        __syncthreads();
 
         for(int i = 0; i < TILE; ++i)
-            Pvalue += Mds[tr][i] * Nds[i][tc];
+            pValue += Mds[tr][i] * Nds[i][tc];
 
-          __syncthreads();
-     }
-     
-     if(Row < d1 && Col < d3)
-        dev_P[Col * d3 + Row] = Pvalue;
+        __syncthreads();
+    }
+
+    if(row < rowsM && col < colsN)
+        P[col * colsN + row] = pValue;
 }
 
 int main(int argc, char* argv[])
 {
    
-#pragma region //managing argv && argc
+#pragma region //managing argv, argc, time
+    clock_t start, end;
 
 	int blockSize;
 
-    if(argc != 2){
-    	cout<<"No Block Size Declared!"<<endl;
-    	return 0;
-    }
-    
+    assert(colsM == rowsN);
+    assert(argc == 2);
+
     blockSize = atoi(argv[1]);
-    
-    if(blockSize!=8 && blockSize!=16 && blockSize!=32){
-    	cout<<"Invalid Block Size!"<<endl;
-    	return 0;
-    }
+
+    assert(blockSize==8 || blockSize==16 || blockSize==32);
     
 #pragma endregion
 
 #pragma region //variables declaration
-    float size_M = d1 * d2 * sizeof(float);
-    float size_N = d2 * d1 * sizeof(float);
-    float size_P = d1 * d3 * sizeof(float);
+    start=clock();
+
+    float sizeM = rowsM * colsM * sizeof(float);
+    float sizeN = colsM * rowsM * sizeof(float);
+    float sizeP = rowsM * colsN * sizeof(float);
     
     dim3 dimBlock(blockSize,blockSize);
 
-    dim3 dimGridM(ceil(d2/dimBlock.x), ceil(d1/dimBlock.y));  //d1*d2 500x2000
-    dim3 dimGridN(ceil(d3/dimBlock.x), ceil(d2/dimBlock.y));  //d2*d3 2000x500
-    dim3 dimGridP(ceil(d3/dimBlock.x), ceil(d1/dimBlock.y));  //ceil works for float vars
+    dim3 dimGridM(ceil(colsM/dimBlock.x), ceil(rowsM/dimBlock.y));  //rowsM*colsM 500x2000
+    dim3 dimGridN(ceil(colsN/dimBlock.x), ceil(colsM/dimBlock.y));  //colsM*colsN 2000x500
+    dim3 dimGridP(ceil(colsN/dimBlock.x), ceil(rowsM/dimBlock.y));  //ceil works for float vars
 #pragma endregion
 
-#pragma region //create and allocate matrix A, B and C
-    float* M; cudaMallocManaged(&M, size_M);
-    float* N; cudaMallocManaged(&N, size_N);
-    float* P; cudaMallocManaged(&P, size_P);
-#pragma endregion
+#pragma region //alloc and inizialize matrices M, N and P with a passed value
+    float* M; cudaMallocManaged(&M, sizeM);
+    float* N; cudaMallocManaged(&N, sizeN);
+    float* P; cudaMallocManaged(&P, sizeP);
 
-#pragma region //init all the matrix with a passed value
-    matrixInit<<<dimGridM, dimBlock>>>(M, 2.0f, d1, d2);
-    matrixInit<<<dimGridN, dimBlock>>>(N, 3.0f, d2, d1);
-    matrixInit<<<dimGridP, dimBlock>>>(P, 0.0f, d1, d3);
+    matrixInit<<<dimGridM, dimBlock>>>(M, 2.0f, rowsM, colsM);
+    matrixInit<<<dimGridN, dimBlock>>>(N, 3.0f, colsM, rowsM);
+    matrixInit<<<dimGridP, dimBlock>>>(P, 0.0f, rowsM, colsN);
 #pragma endregion
 
 #pragma region //multiplication operation
@@ -119,32 +116,35 @@ int main(int argc, char* argv[])
     cudaDeviceSynchronize();
 #pragma endregion
 
-#pragma region //check for errors (all values should be 3000.0f)
-    cout<<"M[0] = "<<M[0]<<endl;
-    cout<<"M[last_position] = "<<M[d1*d2-1]<<endl;
-    cout<<"N[0] = "<<N[0]<<endl;
-    cout<<"N[last_position] = "<<N[d2*d3-1]<<endl;
+#pragma region //check for errors (all values should be eValue)
+
+    float eValue=3000.0f;
+
     cout<<"P[0] = "<<P[0]<<endl;
-    cout<<"P[last_position] = "<<P[d1*d3-1]<<endl;
+    cout<<"P[last] = "<<P[rowsM*colsN-1]<<endl;
 
     int cont=0;
-    for (int i = 0; i < d1 * d3; i++)
+    for (int i = 0; i < rowsM * colsN; ++i)
     {
-        if(P[i]!=3000.0f)
+        if(P[i]!=eValue)
             cont++;
     }
-    cout<<"elementi mancanti: "<<cont<<endl;
+    cout<<"Missing elements: "<<cont<<endl;
 
     float maxError = 0;
-    for (int i = 0; i < d1 * d3; i++)
-	    maxError=fmax(maxError, fabs(P[i]-3000.0f));
+    for (int i = 0; i < rowsM * colsN; ++i)
+	    maxError=fmax(maxError, fabs(P[i]-eValue));
     cout << "Max error: " << maxError << endl;
+
 #pragma endregion
 
-#pragma region //free cuda memory
+#pragma region //free cuda memory and printing time
     cudaFree(M); 
     cudaFree(N); 
     cudaFree(P);
+
+    end=clock();
+    cout << "Exe time: "<<(((double)(end-start))/CLOCKS_PER_SEC)<<" sec"<<endl;
 #pragma region
 
     return 0;
