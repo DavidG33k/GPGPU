@@ -7,13 +7,34 @@ using namespace std;
 
 #define WIDTH 800
 #define HEIGHT 800
+#define BLUR_SIZE 1
 
 #define input_path "../images/myImage.png"
 #define output_path "../images/encoded_image.png"
 
-__global__ void blurKernel(vector<unsigned char> imgIn, vector<unsigned char>* imgOut, int w, int h)
+__global__ void blurKernel(unsigned char* in, unsigned char* out, int w, int h)
 {
+    int Col = blockIdx.x + blockDim.x + threadIdx.x;
+    int Row = blockIdx.y + blockDim.y + threadIdx.y;
 
+    if(Col < w && Row < h) {
+        int pixVal = 0;
+        int pixels = 0;
+
+        for(int blurRow = -BLUR_SIZE; blurRow < BLUR_SIZE+1; ++blurRow) {
+            for(int blurCol = -BLUR_SIZE; blurCol < BLUR_SIZE+1; ++blurCol) {
+                int curRow = Row + blurRow;
+                int curCol = Col + blurCol;
+
+                if(curRow > -1 && curRow < h && curCol > -1 && curCol < w) {
+                    pixVal += in[curRow * w + curCol];
+                    pixels++;
+                }
+            }
+        }
+
+        out[Row * w + Col] = (unsigned char)(pixVal / pixels);
+    }
 }
 
 
@@ -43,19 +64,31 @@ int main(int argc, char* argv[])
     unsigned int h = HEIGHT;
 
     lodepng::decode(imageInput, w, h, input_path);
-    int size = imageInput.size() * sizeof(int);
+    
+    int size = imageInput.size() * sizeof(unsigned char);
 
-    //unsigned char*
-    //unsigned char*
+    unsigned char* in;
+    unsigned char* out;
 
-    cudaMallocManaged(&imageInput, size);
+    cudaMallocManaged(&in, size);    
+    cudaMallocManaged(&out, size);
 
-    //imageOutput.resize(imageInput.size());    
-    cudaMallocManaged(&imageOutput, size);
+    for(int i=0; i<imageInput.size(); i++)
+        in[i] = imageInput[i];
 
-    blurKernel<<<dimGrid, dimBlock>>>(imageInput,imageOutput,WIDTH,HEIGHT);
+    cout << "ci sono" << endl;
 
-    lodepng::encode(output_path, imageInput, w, h);
+    blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h);
+
+    cout << "ci sono" << endl;
+
+    for(int i=0; i<imageInput.size(); i++)
+        imageOutput.push_back(out[i]); //out è grande 8 ma dovrebbe essere grande quanto imageInput.size() :(
+
+
+    cout << "ci sono" << endl;
+
+    //lodepng::encode(output_path, imageOutput, w, h);
 
     cudaDeviceSynchronize();
 #pragma endregion
