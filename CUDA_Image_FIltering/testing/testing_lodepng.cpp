@@ -5,12 +5,12 @@ GPGPU assignment 3: Parallel image convolutional filtering
     @version 02 December 2021 
 */
 
-#include "lodepng.h"
+#include "../lib/lodepng.h"
 #include <iostream>
 using namespace std;
 
-#define image_path "myImage.png"
-#define output_path "encoded_image.png"
+#define image_path "../images/myImage.png"
+#define output_path "../images/encoded_image.png"
 
 void print(vector <unsigned char> const &image) {
    for(int i=0; i < image.size(); i++)
