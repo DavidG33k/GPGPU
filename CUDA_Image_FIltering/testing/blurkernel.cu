@@ -7,15 +7,19 @@ using namespace std;
 
 #define WIDTH 800
 #define HEIGHT 800
-#define BLUR_SIZE 1
+#define BLUR_SIZE 20
+#define NUM_CHANNELS 3
+#define R 0
+#define G 1
+#define B 2
 
 #define input_path "../images/myImage.png"
 #define output_path "../images/encoded_image.png"
 
-__global__ void blurKernel(unsigned char* in, unsigned char* out, int w, int h)
+__global__ void blurKernel(unsigned char* in, unsigned char* out, int w, int h, int num_channels, int channel)
 {
-    int Col = blockIdx.x + blockDim.x + threadIdx.x;
-    int Row = blockIdx.y + blockDim.y + threadIdx.y;
+    int Col = blockIdx.x * blockDim.x + threadIdx.x;
+    int Row = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(Col < w && Row < h) {
         int pixVal = 0;
@@ -27,13 +31,13 @@ __global__ void blurKernel(unsigned char* in, unsigned char* out, int w, int h)
                 int curCol = Col + blurCol;
 
                 if(curRow > -1 && curRow < h && curCol > -1 && curCol < w) {
-                    pixVal += in[curRow * w + curCol];
+                    pixVal += in[curRow * w * num_channels + curCol * num_channels + channel];
                     pixels++;
                 }
             }
         }
 
-        out[Row * w + Col] = (unsigned char)(pixVal / pixels);
+        out[Row * w * num_channels + Col * num_channels + channel] = (unsigned char)(pixVal / pixels);
     }
 }
 
@@ -63,7 +67,7 @@ int main(int argc, char* argv[])
     unsigned int w = WIDTH;
     unsigned int h = HEIGHT;
 
-    lodepng::decode(imageInput, w, h, input_path);
+    lodepng::decode(imageInput, w, h, input_path, LCT_RGB);
     cout << "buffer input size: " << imageInput.size() << endl;
     
     int size = imageInput.size() * sizeof(unsigned char);
@@ -79,7 +83,9 @@ int main(int argc, char* argv[])
 
     cout << "ci sono" << endl;
 
-    blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h);
+    blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h, NUM_CHANNELS, R);
+    blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h, NUM_CHANNELS, G);
+    blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h, NUM_CHANNELS, B);
 
     cudaDeviceSynchronize();
 
@@ -92,9 +98,8 @@ int main(int argc, char* argv[])
 
     cout << "ci sono" << endl;
 
-    lodepng::encode(output_path, imageOutput, w, h);
+    lodepng::encode(output_path, imageOutput, w, h, LCT_RGB);
 
-    cudaDeviceSynchronize();
 #pragma endregion
 
 
