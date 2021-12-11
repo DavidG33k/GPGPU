@@ -64,6 +64,7 @@ int main(int argc, char* argv[])
     unsigned int h = HEIGHT;
 
     lodepng::decode(imageInput, w, h, input_path);
+    cout << "buffer input size: " << imageInput.size() << endl;
     
     int size = imageInput.size() * sizeof(unsigned char);
 
@@ -80,15 +81,18 @@ int main(int argc, char* argv[])
 
     blurKernel<<<dimGrid, dimBlock>>>(in, out, w, h);
 
+    cudaDeviceSynchronize();
+
     cout << "ci sono" << endl;
 
     for(int i=0; i<imageInput.size(); i++)
         imageOutput.push_back(out[i]); //out è grande 8 ma dovrebbe essere grande quanto imageInput.size() :(
 
+    cout << imageInput.size() << endl;
 
     cout << "ci sono" << endl;
 
-    //lodepng::encode(output_path, imageOutput, w, h);
+    lodepng::encode(output_path, imageOutput, w, h);
 
     cudaDeviceSynchronize();
 #pragma endregion
