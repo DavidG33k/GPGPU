@@ -14,7 +14,7 @@ using namespace std;
 
 #define WIDTH 800
 #define HEIGHT 800
-#define BLUR_SIZE 20
+#define BLUR_SIZE 8
 #define NUM_CHANNELS 3
 #define R 0
 #define G 1
@@ -43,12 +43,12 @@ __global__ void blurKernel(unsigned char* dev_in, unsigned char* dev_out, int w,
     
     __syncthreads();
 
-    //int pixVal=0;
-    //int pixels=0;
+    int pixVal=0;
+    int pixels=0;
     if(tr < TILE_SIZE && tc < TILE_SIZE)
     {
-        int pixVal=0;
-        int pixels=0;
+        //int pixVal=0;
+        //int pixels=0;
         for(int i = 0; i<BLUR_SIZE; ++i)
             for(int j = 0; j<BLUR_SIZE; ++j)
             {
