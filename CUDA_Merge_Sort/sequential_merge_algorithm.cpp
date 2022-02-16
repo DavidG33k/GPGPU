@@ -8,9 +8,10 @@ Exam report: Cuda Merge Sort
 #include <iostream>
 #include <assert.h>
 #include <vector>
+#include <time.h>
 using namespace std;
 
-#define DIM 1000
+#define DIM 50000
 
 void merge_sequential(int *A, int m, int *B, int n, int *C) {
     int i = 0;  //index into A
@@ -45,6 +46,8 @@ int initArray (int *array) {
 }
 
 int main () {
+    clock_t start, end;
+    start=clock();
 
     int A[DIM];
     int B[DIM];
@@ -61,12 +64,16 @@ int main () {
         if(C[i] > C[i+1]) {
             sorted = false;
             break;
-        }
-            
+        }      
+    
     if(sorted)
         cout << "Sorted!\n";
     else 
         cout << "Error!\n";  
+
+    end=clock();
+    cout.precision(1000);
+    cout << "Time in ms: "<<(((double)(end-start))/CLOCKS_PER_SEC)*1000.000<<" ms"<<endl;
 
     return 0;
 }
